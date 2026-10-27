@@ -1,253 +1,228 @@
-# Night System (NightUI) — Standalone Roblox Luau UI Library
+# Night System (`NightUI`) — Roblox Luau UI Library
 
-**Night System (`NightUI`)** ist eine vollständig eigenständige, tab-lose Roblox Luau UI-Library im **Night System (`#121212` / `#16181A` / `#FFFFFF`)** Design. Sie benötigt keinerlei externe Abhängigkeiten und rendert sämtliche UI-Komponenten vollautomatisch, sauber sortiert und ohne Überlappungen in einem einzigen scrollbaren Container.
+Eine vollständige, professionelle und 100 % eigenständige **Roblox Luau UI Library** im 1:1 **Night System** Dark-/Glassmorphism-Design (`#0B0B0C` / `#111214` / `#FFFFFF`).
 
 ---
 
 ## Schnellstart (Loadstring)
 
 ```luau
-local NightSystem = loadstring(game:HttpGet("https://raw.githubusercontent.com/NightSyste/NightSystem/main/NightSystem.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/NightSyste/NightSystem/main/source.lua"))()
 ```
 
----
-
-## Features & Architektur
-
-- **Kein Tab-System (Single-Container Layout):** Alle Elemente werden direkt im rechten Hauptbereich in einem butterweichen `ScrollingFrame` (`AutomaticCanvasSize = Enum.AutomaticSize.Y`, `ScrollBarThickness = 2`) gerendert + Live-Suchfilter oben rechts.
-- **Intelligentes Auto-Sorting (`AutoSort = true`):**
-  - Gruppiert Elemente automatisch nach Sektionen (`CreateSection`) und sortiert sie innerhalb jeder Sektion nach Typ-Hierarchie:
-    1. `Sections`
-    2. `Labels` / `Paragraphs`
-    3. `Toggles`
-    4. `Sliders`
-    5. `Dropdowns` / `ColorPickers`
-    6. `Inputs` / `Keybinds`
-    7. `Buttons`
-    8. `Dividers`
-  - Ist `AutoSort = false`, werden alle Elemente strikt in ihrer Erstellungsreihenfolge gerendert.
-- **Dynamische Container-Höhenanpassung:** Ausklappbare `Dropdowns` und `ColorPicker` vergrößern ihre Kartenhöhe per `TweenService`, sodass alle darunterliegenden Elemente sauber nach unten gleiten und nichts überlappt.
-- **Linke Spieler- & Info-Spalte (210px):**
-  - **Discord Brand Card** oben mit Copy-Button (`setclipboard` + Toast-Notification).
-  - **Spieler-Dashboard** mit `72x72px` HeadShot-Avatar, `DisplayName`, `@Username`, konfigurierbarem `IntroText`, dynamischer `Place ID` + Spielname (`MarketplaceService`) und Live-`Team`-Anzeige.
-  - **User-Footer** unten mit `32x32px` rundem Avatar sowie **Live-FPS & Ping**-Anzeige.
-- **Fenster-Steuerung:**
-  - `X`: Schließt und zerstört die UI mit Fade-Out-Tween.
-  - `□`: Maximiert/Restauriert die Fenstergröße per Tween (`740x460` ↔ `920x560`).
-  - `≡`: Minimiert das Fenster zu einem verschiebbaren **Night System**-Floating-Badge (oder per `ToggleKey`, Standard: `RightShift`).
+*(Alternativ ist dieselbe Datei auch unter `NightUI.lua` erreichbar: `https://raw.githubusercontent.com/NightSyste/NightSystem/main/NightUI.lua`)*
 
 ---
 
-## API-Dokumentation
+## Highlights & Design-Merkmale
 
-### 1. Fenster erstellen (`NightSystem:CreateWindow`)
+- **1:1 Night System Design:**
+  - Äußeres Fenster (`#0B0B0C`, `BackgroundTransparency = 0.05`, `12px` Corner, `#222326` Stroke).
+  - Rechter Content-Container (`#111214` mit subtilem `-35°` `UIGradient` von `#181C22` oben rechts bis `#0E0E10` unten links).
+  - Top-Bar mit `X` (Smooth Fade-Out Close), `⛶` (Maximize Toggle), `≡` (Minimize + `RightShift` Keybind) und zentrierter `40x4px` Drag-Pill.
+- **Linke Sidebar:**
+  - **Brand-Card** oben mit Logo, Titel (`Night System`), Discord-Invite und One-Click Copy-Button (`setclipboard` + Notification).
+  - **Standardmäßig NUR der `Home`-Tab:** Keine unnötigen Dummy-Tabs. Eigene Kategorien (`Window:CreateCategory`) und Tabs (`Window:CreateTab`) werden dynamisch darunter einsortiert.
+  - **Spieler-Footer** unten mit Live-HeadShot-Avatar, `DisplayName` und `@Username`.
+- **Fester `Home`-Tab mit Live-Daten:**
+  - Begrüßung (`Welcome back, @Username`), großes `80x80px` Charakter-HeadShot-Profil, anpassbarer `AnnouncementText` sowie Live-Server-Statistiken (`Place ID` + Spielname via `MarketplaceService` und automatisches `Your Team`-Update).
+- **Automatisches Layout & Scrolling:**
+  - Alle Elemente in einem Tab erhalten inkrementelle `LayoutOrder`-Werte in der Reihenfolge ihres Aufrufs und passen ihre `ScrollingFrame`-Größe vollautomatisch an (`AutomaticCanvasSize = Enum.AutomaticSize.Y` + `AbsoluteContentSize`-Listener).
+
+---
+
+## Vollständige API-Dokumentation
+
+### 1. Hauptfenster erstellen (`Library:CreateWindow`)
 
 ```luau
-local Window = NightSystem:CreateWindow({
+local Window = Library:CreateWindow({
 	Title = "Night System",
-	Subtitle = "discord.gg/4cZBCyDFmX",
-	LogoId = "rbxassetid://10734950309",
-	IntroText = "Welcome to Night System! Join discord.gg/4cZBCyDFmX for news, updates and support.",
-	AutoSort = true,
+	DiscordInvite = "discord.gg/4cZBCyDFmX",
+	LogoId = "", -- Optional: "rbxassetid://..."
+	AnnouncementText = "Autorob is free for a few days so you can test it! Enjoy it and let us know what you think. Join discord.gg/4cZBCyDFmX for news, updates and support.",
 	ToggleKey = Enum.KeyCode.RightShift,
 })
 ```
 
----
-
-### 2. Sektion (`Window:CreateSection`)
-
-Erstellt eine optische Kategorie-Überschrift mit horizontaler Linie. Bei aktiviertem `AutoSort` bildet jede Sektion einen eigenen Sortier-Block.
+### 2. Sidebar-Kategorie erstellen (`Window:CreateCategory`)
 
 ```luau
-local CombatSection = Window:CreateSection("Autorob & Farming")
--- Optional später umbenennen:
-CombatSection:Set("Main Features")
+Window:CreateCategory("AUTOROB")
 ```
 
----
+### 3. Tab erstellen (`Window:CreateTab`)
 
-### 3. Toggle (`Window:CreateToggle`)
-
-Rechtsbündiger Pill-Switch (`#262626` → `#FFFFFF`), animiert via `TweenService`.
+Unterstützt eingebaute Icon-Namen (`"home"`, `"shield"`, `"eye"`, `"settings"`, `"palette"`, `"bell"`, `"user"`, `"car"`, `"lock"`, `"folder"`, `"sliders"`, `"zap"`, `"sparkles"`) oder jede `"rbxassetid://..."`-ID.
 
 ```luau
-local AutoRobToggle = Window:CreateToggle({
-	Name = "Enable AutoRob",
-	Description = "Automatically farms available robberies on the map",
+local Tab = Window:CreateTab({
+	Name = "AutoRob",
+	Icon = "shield",
+})
+```
+
+### 4. Sektion erstellen (`Tab:CreateSection`)
+
+```luau
+local Section = Tab:CreateSection("Main Controls")
+```
+
+### 5. Toggle erstellen (`Tab:CreateToggle`)
+
+```luau
+local MyToggle = Tab:CreateToggle({
+	Name = "Enable Feature",
+	Description = "Optional subtitle description",
 	Default = false,
-	Flag = "AutoRob_Enabled",
-	Callback = function(Value)
-		print("AutoRob Status:", Value)
+	Flag = "FeatureToggle",
+	Callback = function(state)
+		print("Toggle state:", state)
 	end,
 })
 
 -- Methoden:
-AutoRobToggle:Set(true)
-print(AutoRobToggle:Get(), NightSystem.Flags["AutoRob_Enabled"])
+MyToggle:Set(true)
+print(MyToggle:Get(), Library.Flags["FeatureToggle"])
 ```
 
----
-
-### 4. Button (`Window:CreateButton`)
-
-Klickbare Karte mit Hover-/Click-Animation und Action-Chevron rechts.
+### 6. Button erstellen (`Tab:CreateButton`)
 
 ```luau
-local TeleportBtn = Window:CreateButton({
-	Name = "Teleport to Criminal Base",
-	Description = "Instantly moves your character to the safezone",
+Tab:CreateButton({
+	Name = "Execute Action",
+	Description = "Triggers an immediate action with ripple animation",
 	Callback = function()
-		print("Teleported!")
+		print("Button clicked!")
 	end,
 })
-
--- Methoden:
-TeleportBtn:Set("Teleport to Bank")
-TeleportBtn:Fire()
 ```
 
----
+### 7. Dropdown erstellen (`Tab:CreateDropdown`)
 
-### 5. Slider (`Window:CreateSlider`)
-
-Ziehbarer Schieberegler mit Live-Wert-Anzeige und direkter Zahleneingabe (`TextBox`) oben rechts.
+Unterstützt sowohl **Single-Select** (`Multi = false`) als auch **Multi-Select** (`Multi = true`) inklusive integrierter Suchleiste:
 
 ```luau
-local SpeedSlider = Window:CreateSlider({
-	Name = "Vehicle Flight Speed",
-	Description = "Adjust movement velocity during autorob transit",
-	Min = 50,
-	Max = 400,
-	Default = 180,
-	Increment = 5,
-	Suffix = " studs/s",
-	Flag = "Flight_Speed",
-	Callback = function(Value)
-		print("New Speed:", Value)
-	end,
-})
-
--- Methoden:
-SpeedSlider:Set(220)
-print(SpeedSlider:Get())
-```
-
----
-
-### 6. Dropdown (`Window:CreateDropdown`)
-
-Ausklappbares Menü mit integrierter Suchleiste (`Searchable = true`), Einzel- und Mehrfachauswahl (`Multi = true`) sowie dynamischer Größenanpassung.
-
-```luau
-local TargetDropdown = Window:CreateDropdown({
-	Name = "Target Locations",
-	Description = "Select which robberies to prioritize",
-	Options = { "Jewelry Store", "Central Bank", "Museum", "Power Plant", "Casino" },
-	Default = "Central Bank",
+local MyDropdown = Tab:CreateDropdown({
+	Name = "Select Mode",
+	Options = { "Fast", "Safe", "Stealth" },
 	Multi = false,
-	Searchable = true,
-	Flag = "Target_Location",
-	Callback = function(Value)
-		print("Selected target:", Value)
+	Default = "Safe",
+	Flag = "ModeDropdown",
+	Callback = function(value)
+		print("Selected:", value)
 	end,
 })
 
 -- Methoden:
-TargetDropdown:Set("Casino")
-TargetDropdown:Refresh({ "Jewelry Store", "Central Bank", "Cargo Train" }, true)
+MyDropdown:Set("Fast")
+MyDropdown:Refresh({ "Mode A", "Mode B", "Mode C" }, false)
 ```
 
----
-
-### 7. Input (`Window:CreateInput`)
-
-Abgerundetes Textfeld (`TextBox`) mit weißer Fokus-Rahmen-Animation.
+### 8. Slider erstellen (`Tab:CreateSlider`)
 
 ```luau
-local WebhookInput = Window:CreateInput({
-	Name = "Discord Webhook URL",
-	Description = "Paste your webhook to receive live robbery logs",
+local MySlider = Tab:CreateSlider({
+	Name = "WalkSpeed",
+	Min = 16,
+	Max = 200,
+	Default = 50,
+	Increment = 0.5,
+	Suffix = " studs",
+	Flag = "WalkSpeedSlider",
+	Callback = function(val)
+		print("Value:", val)
+	end,
+})
+
+-- Methode:
+MySlider:Set(100)
+```
+
+### 9. Input / TextBox erstellen (`Tab:CreateInput` / `Tab:CreateTextBox`)
+
+```luau
+local MyInput = Tab:CreateInput({
+	Name = "Webhook URL",
 	Placeholder = "https://discord.com/api/webhooks/...",
 	Default = "",
-	ClearTextOnFocus = false,
-	Flag = "Webhook_URL",
-	Callback = function(Text)
-		print("Webhook updated:", Text)
+	NumericOnly = false,
+	Flag = "WebhookInput",
+	Callback = function(text)
+		print("Input text:", text)
 	end,
 })
 
--- Methoden:
-WebhookInput:Set("https://discord.com/api/webhooks/example")
+-- Methode:
+MyInput:Set("New text")
 ```
 
----
-
-### 8. Keybind (`Window:CreateKeybind`)
-
-Interaktiver Keybind-Picker (zeigt `[ ... ]` beim Binden, unterstützt Tastatur- & Maustasten, `ESC`/`Backspace` löscht die Belegung).
+### 10. Keybind erstellen (`Tab:CreateKeybind`)
 
 ```luau
-local PanicKey = Window:CreateKeybind({
-	Name = "Emergency Eject Key",
-	Description = "Quickly stops all active routines when pressed",
+local MyKeybind = Tab:CreateKeybind({
+	Name = "Toggle Action",
 	Default = Enum.KeyCode.E,
-	Mode = "Toggle",
-	Flag = "Panic_Keybind",
-	Callback = function(Key)
-		print("Triggered Keybind:", Key)
+	Mode = "Toggle", -- "Toggle" oder "Hold"
+	Flag = "ActionBind",
+	Callback = function(state, key)
+		print("Keybind triggered:", state, key)
 	end,
 })
 
--- Methoden:
-PanicKey:Set(Enum.KeyCode.F)
+-- Methode:
+MyKeybind:Set(Enum.KeyCode.F)
 ```
 
----
-
-### 9. ColorPicker (`Window:CreateColorPicker`)
-
-Ausklappbarer 2D-HSV-Farbwähler mit Regenbogen-Hue-Slider sowie direkten `HEX`-, `R`-, `G`- und `B`-Eingabefeldern.
+### 11. ColorPicker erstellen (`Tab:CreateColorPicker`)
 
 ```luau
-local EspColor = Window:CreateColorPicker({
-	Name = "Highlight Accent Color",
-	Description = "Choose the 3D box & tracer color",
+local MyColor = Tab:CreateColorPicker({
+	Name = "Accent Color",
 	Default = Color3.fromRGB(255, 255, 255),
-	Flag = "ESP_Color",
-	Callback = function(Color)
-		print("Selected Color:", Color)
+	Flag = "AccentColorFlag",
+	Callback = function(color)
+		print("Color:", color)
 	end,
 })
 
--- Methoden:
-EspColor:Set(Color3.fromRGB(224, 62, 62))
+-- Methode:
+MyColor:Set(Color3.fromRGB(120, 180, 255))
 ```
 
----
-
-### 10. Label, Paragraph & Divider
+### 12. Label, Paragraph & Divider
 
 ```luau
-local StatusLabel = Window:CreateLabel("Server Status: Undetected & Operational")
-StatusLabel:Set("Server Status: Farming Active")
+local MyLabel = Tab:CreateLabel("Server Status: Online")
+MyLabel:Set("Server Status: Active")
 
-local InfoBox = Window:CreateParagraph({
-	Title = "Autorob Trial Information",
-	Content = "Autorob is free for a few days so you can test it! Enjoy it and let us know what you think.",
+local MyParagraph = Tab:CreateParagraph({
+	Title = "Changelog",
+	Content = "Added full HSV ColorPicker, Multi-Dropdown search and JSON config system.",
 })
+MyParagraph:Set({ Title = "Updated Title", Content = "Updated paragraph content." })
 
-Window:CreateDivider()
+Tab:CreateDivider()
 ```
 
----
-
-### 11. Toast-Benachrichtigungen (`NightSystem:Notify`)
+### 13. Notification-System (`Library:Notify`)
 
 ```luau
-NightSystem:Notify({
+Library:Notify({
 	Title = "Night System",
 	Content = "Configuration loaded successfully!",
 	Duration = 4,
+	Icon = "check",
 })
+```
+
+### 14. Config- & Flag-System
+
+```luau
+-- Direktes Auslesen über Library.Flags:
+print(Library.Flags["FeatureToggle"])
+
+-- Speichern & Laden über writefile / readfile (HttpService:JSONEncode):
+Library:SaveConfig("my_profile")
+Library:LoadConfig("my_profile")
 ```
