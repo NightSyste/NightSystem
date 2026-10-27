@@ -2596,14 +2596,14 @@ function NightSystem:CreateWindow(config: {
 
 		local bindBtn = Instance.new("TextButton")
 		bindBtn.AutomaticSize = Enum.AutomaticSize.X
-		bindBtn.Size = UDim2.new(0, 64, 0, 24)
+		bindBtn.Size = UDim2.new(0, 32, 0, 24)
 		bindBtn.Position = UDim2.new(1, -14, 0.5, 0)
 		bindBtn.AnchorPoint = Vector2.new(1, 0.5)
 		bindBtn.BackgroundColor3 = THEME.CardInner
 		bindBtn.BorderSizePixel = 0
 		bindBtn.AutoButtonColor = false
 		bindBtn.Font = Enum.Font.GothamBold
-		bindBtn.Text = "[ " .. formatKeyName(currentKey) .. " ]"
+		bindBtn.Text = formatKeyName(currentKey)
 		bindBtn.TextColor3 = THEME.TextPrimary
 		bindBtn.TextSize = 11
 		bindBtn.Parent = card
@@ -2619,7 +2619,7 @@ function NightSystem:CreateWindow(config: {
 			currentKey = newKey
 			KeybindObj.Value = newKey
 			NightSystem.Flags[flag] = newKey
-			bindBtn.Text = "[ " .. formatKeyName(currentKey) .. " ]"
+			bindBtn.Text = formatKeyName(currentKey)
 		end
 
 		function KeybindObj:Get(): EnumItem?
@@ -2631,7 +2631,7 @@ function NightSystem:CreateWindow(config: {
 				return
 			end
 			isBinding = true
-			bindBtn.Text = "[ ... ]"
+			bindBtn.Text = "..."
 			tween(bindStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0 })
 		end)
 
