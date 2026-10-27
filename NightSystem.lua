@@ -690,11 +690,7 @@ function NightSystem:CreateWindow(config: {
 		if UserInputService:GetFocusedTextBox() then
 			return
 		end
-		if
-			input.KeyCode == Enum.KeyCode.LeftControl
-			or input.KeyCode == Enum.KeyCode.RightControl
-			or input.KeyCode == toggleKey
-		then
+		if input.KeyCode == Enum.KeyCode.LeftControl then
 			toggleVisibility()
 		end
 	end))
