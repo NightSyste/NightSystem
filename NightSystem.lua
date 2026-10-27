@@ -4197,16 +4197,6 @@ function NightSystem:CreateWindow(config: {
 		})
 	end)
 
-		-- Night System Haupt-UI einblenden
-		MainFrame.Visible = true
-		MainFrame.Size = UDim2.new(0, normalSize.X.Offset * 0.92, 0, normalSize.Y.Offset * 0.92)
-		MainFrame.BackgroundTransparency = 0.4
-		tween(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = normalSize,
-			BackgroundTransparency = 0,
-		})
-	end)
-
 	local winInstance = setmetatable(Window, Window)
 	NightSystem._ActiveWindow = winInstance
 	return winInstance
