@@ -23,6 +23,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
@@ -857,7 +858,7 @@ function NightSystem:CreateWindow(config: {
 	footerAvatarCorner.Parent = FooterAvatar
 
 	local FooterDisplayName = Instance.new("TextLabel")
-	FooterDisplayName.Size = UDim2.new(1, -44, 0, 15)
+	FooterDisplayName.Size = UDim2.new(1, -96, 0, 15)
 	FooterDisplayName.Position = UDim2.new(0, 42, 0, 12)
 	FooterDisplayName.BackgroundTransparency = 1
 	FooterDisplayName.Font = Enum.Font.GothamBold
@@ -869,7 +870,7 @@ function NightSystem:CreateWindow(config: {
 	FooterDisplayName.Parent = UserFooter
 
 	local FooterUsername = Instance.new("TextLabel")
-	FooterUsername.Size = UDim2.new(1, -44, 0, 13)
+	FooterUsername.Size = UDim2.new(1, -96, 0, 13)
 	FooterUsername.Position = UDim2.new(0, 42, 0, 27)
 	FooterUsername.BackgroundTransparency = 1
 	FooterUsername.Font = Enum.Font.GothamMedium
@@ -879,6 +880,43 @@ function NightSystem:CreateWindow(config: {
 	FooterUsername.TextXAlignment = Enum.TextXAlignment.Left
 	FooterUsername.TextTruncate = Enum.TextTruncate.AtEnd
 	FooterUsername.Parent = UserFooter
+
+	-- Live Roblox FPS Badge next to Avatar / Name in UserFooter
+	local FpsBadge = Instance.new("Frame")
+	FpsBadge.Name = "FpsBadge"
+	FpsBadge.Size = UDim2.new(0, 48, 0, 20)
+	FpsBadge.Position = UDim2.new(1, 0, 0, 17)
+	FpsBadge.AnchorPoint = Vector2.new(1, 0)
+	FpsBadge.BackgroundColor3 = THEME.DiscordBoxBg
+	FpsBadge.BorderSizePixel = 0
+	FpsBadge.Parent = UserFooter
+	createCorner(FpsBadge, 6)
+	createStroke(FpsBadge, THEME.Stroke, 1, 0.2)
+
+	local FpsLabel = Instance.new("TextLabel")
+	FpsLabel.Name = "FpsLabel"
+	FpsLabel.Size = UDim2.new(1, 0, 1, 0)
+	FpsLabel.BackgroundTransparency = 1
+	FpsLabel.Font = Enum.Font.GothamBold
+	FpsLabel.Text = "60 FPS"
+	FpsLabel.TextColor3 = THEME.TextSecondary
+	FpsLabel.TextSize = 10
+	FpsLabel.Parent = FpsBadge
+
+	do
+		local frames = 0
+		local lastTick = os.clock()
+		trackConnection(RunService.RenderStepped:Connect(function()
+			frames += 1
+			local now = os.clock()
+			if now - lastTick >= 0.5 then
+				local currentFps = math.clamp(math.round(frames / (now - lastTick)), 1, 999)
+				frames = 0
+				lastTick = now
+				FpsLabel.Text = tostring(currentFps) .. " FPS"
+			end
+		end))
+	end
 
 	-- ========================================================================
 	-- RIGHT CONTENT CONTAINER (#16181A with #1E2528 / #141517 UIGradient)
