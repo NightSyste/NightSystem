@@ -605,9 +605,10 @@ function NightSystem:CreateWindow(config: {
 
 	local function setWindowMinimized(state: boolean)
 		isMinimized = state
+		isHidden = false
 		if isMinimized then
 			local shrink = tween(MainFrame, TWEEN_MEDIUM, {
-				Size = UDim2.new(0, 740, 0, 0),
+				Size = UDim2.new(0, MainFrame.AbsoluteSize.X, 0, 0),
 				BackgroundTransparency = 1,
 			})
 			shrink.Completed:Connect(function()
@@ -626,28 +627,11 @@ function NightSystem:CreateWindow(config: {
 		end
 	end
 
-	local function toggleVisibility()
-		if isMinimized then
-			setWindowMinimized(false)
-			return
-		end
-		isHidden = not isHidden
+	local function toggleMinimizeState()
 		if isHidden then
-			local hideTw = tween(MainFrame, TWEEN_MEDIUM, {
-				Size = UDim2.new(0, 700, 0, 0),
-				BackgroundTransparency = 1,
-			})
-			hideTw.Completed:Connect(function()
-				if isHidden then
-					MainFrame.Visible = false
-				end
-			end)
+			setWindowMinimized(false)
 		else
-			MainFrame.Visible = true
-			tween(MainFrame, TWEEN_SMOOTH, {
-				Size = if isMaximized then maximizedSize else normalSize,
-				BackgroundTransparency = 0,
-			})
+			setWindowMinimized(not isMinimized)
 		end
 	end
 
@@ -656,7 +640,7 @@ function NightSystem:CreateWindow(config: {
 		isHidden = true
 		FloatingBadge.Visible = false
 		local fadeOut = tween(MainFrame, TWEEN_MEDIUM, {
-			Size = UDim2.new(0, 680, 0, 0),
+			Size = UDim2.new(0, MainFrame.AbsoluteSize.X, 0, 0),
 			BackgroundTransparency = 1,
 		})
 		fadeOut.Completed:Connect(function()
@@ -666,7 +650,7 @@ function NightSystem:CreateWindow(config: {
 		end)
 		NightSystem:Notify({
 			Title = windowTitle,
-			Content = "UI geschlossen – Drücke STRG (Ctrl), um sie wieder zu öffnen.",
+			Content = "UI geschlossen – Drücke linke STRG, um sie wieder zu öffnen.",
 			Duration = 3,
 		})
 	end)
@@ -679,7 +663,7 @@ function NightSystem:CreateWindow(config: {
 	end)
 
 	MinimizeBtn.MouseButton1Click:Connect(function()
-		setWindowMinimized(true)
+		toggleMinimizeState()
 	end)
 
 	FloatingBadge.MouseButton1Click:Connect(function()
@@ -691,7 +675,7 @@ function NightSystem:CreateWindow(config: {
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.LeftControl then
-			toggleVisibility()
+			toggleMinimizeState()
 		end
 	end))
 
