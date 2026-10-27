@@ -1385,10 +1385,10 @@ function NightSystem:CreateWindow(config: {
 	InfoTextLabel.LineHeight = 1.25
 	InfoTextLabel.Parent = HomePage
 
-	-- Bottom Game Statistics (Executor, Place ID & Your Team separated by 1px #262626 lines)
+	-- Bottom Game Statistics (Executor, Place ID, Roblox Version & Your Team separated by 1px #262626 lines)
 	local StatsContainer = Instance.new("Frame")
 	StatsContainer.Name = "StatsContainer"
-	StatsContainer.Size = UDim2.new(1, 0, 0, 111)
+	StatsContainer.Size = UDim2.new(1, 0, 0, 132)
 	StatsContainer.Position = UDim2.new(0, 0, 1, 0)
 	StatsContainer.AnchorPoint = Vector2.new(0, 1)
 	StatsContainer.BackgroundTransparency = 1
@@ -1402,8 +1402,9 @@ function NightSystem:CreateWindow(config: {
 	TopStatsDivider.BorderSizePixel = 0
 	TopStatsDivider.Parent = StatsContainer
 
+	-- Row 1: Executor
 	local ExecutorRow = Instance.new("Frame")
-	ExecutorRow.Size = UDim2.new(1, 0, 0, 36)
+	ExecutorRow.Size = UDim2.new(1, 0, 0, 32)
 	ExecutorRow.Position = UDim2.new(0, 0, 0, 1)
 	ExecutorRow.BackgroundTransparency = 1
 	ExecutorRow.Parent = StatsContainer
@@ -1448,17 +1449,18 @@ function NightSystem:CreateWindow(config: {
 	ExecutorValue.TextTruncate = Enum.TextTruncate.AtEnd
 	ExecutorValue.Parent = ExecutorRow
 
-	local MiddleStatsDivider = Instance.new("Frame")
-	MiddleStatsDivider.Size = UDim2.new(1, 0, 0, 1)
-	MiddleStatsDivider.Position = UDim2.new(0, 0, 0, 37)
-	MiddleStatsDivider.BackgroundColor3 = THEME.Stroke
-	MiddleStatsDivider.BackgroundTransparency = 0.2
-	MiddleStatsDivider.BorderSizePixel = 0
-	MiddleStatsDivider.Parent = StatsContainer
+	local Divider2 = Instance.new("Frame")
+	Divider2.Size = UDim2.new(1, 0, 0, 1)
+	Divider2.Position = UDim2.new(0, 0, 0, 33)
+	Divider2.BackgroundColor3 = THEME.Stroke
+	Divider2.BackgroundTransparency = 0.2
+	Divider2.BorderSizePixel = 0
+	Divider2.Parent = StatsContainer
 
+	-- Row 2: Place ID
 	local PlaceIdRow = Instance.new("Frame")
-	PlaceIdRow.Size = UDim2.new(1, 0, 0, 36)
-	PlaceIdRow.Position = UDim2.new(0, 0, 0, 38)
+	PlaceIdRow.Size = UDim2.new(1, 0, 0, 32)
+	PlaceIdRow.Position = UDim2.new(0, 0, 0, 34)
 	PlaceIdRow.BackgroundTransparency = 1
 	PlaceIdRow.Parent = StatsContainer
 
@@ -1484,17 +1486,85 @@ function NightSystem:CreateWindow(config: {
 	PlaceIdValue.TextTruncate = Enum.TextTruncate.AtEnd
 	PlaceIdValue.Parent = PlaceIdRow
 
-	local BottomStatsDivider = Instance.new("Frame")
-	BottomStatsDivider.Size = UDim2.new(1, 0, 0, 1)
-	BottomStatsDivider.Position = UDim2.new(0, 0, 0, 74)
-	BottomStatsDivider.BackgroundColor3 = THEME.Stroke
-	BottomStatsDivider.BackgroundTransparency = 0.2
-	BottomStatsDivider.BorderSizePixel = 0
-	BottomStatsDivider.Parent = StatsContainer
+	local Divider3 = Instance.new("Frame")
+	Divider3.Size = UDim2.new(1, 0, 0, 1)
+	Divider3.Position = UDim2.new(0, 0, 0, 66)
+	Divider3.BackgroundColor3 = THEME.Stroke
+	Divider3.BackgroundTransparency = 0.2
+	Divider3.BorderSizePixel = 0
+	Divider3.Parent = StatsContainer
 
+	-- Row 3: Roblox Version (directly below Place ID, always latest)
+	local VersionRow = Instance.new("Frame")
+	VersionRow.Size = UDim2.new(1, 0, 0, 32)
+	VersionRow.Position = UDim2.new(0, 0, 0, 67)
+	VersionRow.BackgroundTransparency = 1
+	VersionRow.Parent = StatsContainer
+
+	local VersionLabel = Instance.new("TextLabel")
+	VersionLabel.Size = UDim2.new(0.35, 0, 1, 0)
+	VersionLabel.BackgroundTransparency = 1
+	VersionLabel.Font = Enum.Font.GothamMedium
+	VersionLabel.Text = "Roblox Version"
+	VersionLabel.TextColor3 = THEME.TextSecondary
+	VersionLabel.TextSize = 13
+	VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+	VersionLabel.Parent = VersionRow
+
+	local localClientVersion = "Latest"
+	pcall(function()
+		if type(version) == "function" then
+			localClientVersion = tostring(version())
+		elseif type(Version) == "function" then
+			localClientVersion = tostring(Version())
+		end
+	end)
+
+	local VersionValue = Instance.new("TextLabel")
+	VersionValue.Size = UDim2.new(0.65, 0, 1, 0)
+	VersionValue.Position = UDim2.new(0.35, 0, 0, 0)
+	VersionValue.BackgroundTransparency = 1
+	VersionValue.Font = Enum.Font.GothamMedium
+	VersionValue.Text = localClientVersion
+	VersionValue.TextColor3 = THEME.TextStatValue
+	VersionValue.TextSize = 13
+	VersionValue.TextXAlignment = Enum.TextXAlignment.Right
+	VersionValue.TextTruncate = Enum.TextTruncate.AtEnd
+	VersionValue.Parent = VersionRow
+
+	-- Fetch latest live Roblox version from Roblox ClientSettings CDN
+	task.spawn(function()
+		local ok, rawJson = pcall(function()
+			return (game :: any):HttpGet("https://clientsettingscdn.roblox.com/v2/client-version/WindowsPlayer")
+		end)
+		if ok and type(rawJson) == "string" and #rawJson > 0 then
+			local decodedOk, data = pcall(function()
+				return HttpService:JSONDecode(rawJson)
+			end)
+			if decodedOk and type(data) == "table" then
+				local verNum = data.version or localClientVersion
+				local uploadHash = data.clientVersionUpload
+				if uploadHash and tostring(uploadHash) ~= "" then
+					VersionValue.Text = string.format("%s (%s)", tostring(verNum), tostring(uploadHash))
+				else
+					VersionValue.Text = tostring(verNum)
+				end
+			end
+		end
+	end)
+
+	local Divider4 = Instance.new("Frame")
+	Divider4.Size = UDim2.new(1, 0, 0, 1)
+	Divider4.Position = UDim2.new(0, 0, 0, 99)
+	Divider4.BackgroundColor3 = THEME.Stroke
+	Divider4.BackgroundTransparency = 0.2
+	Divider4.BorderSizePixel = 0
+	Divider4.Parent = StatsContainer
+
+	-- Row 4: Your Team
 	local TeamRow = Instance.new("Frame")
-	TeamRow.Size = UDim2.new(1, 0, 0, 36)
-	TeamRow.Position = UDim2.new(0, 0, 0, 75)
+	TeamRow.Size = UDim2.new(1, 0, 0, 32)
+	TeamRow.Position = UDim2.new(0, 0, 0, 100)
 	TeamRow.BackgroundTransparency = 1
 	TeamRow.Parent = StatsContainer
 
