@@ -1157,7 +1157,16 @@ function NightSystem:CreateWindow(config: {
 		return wrapper, lbl
 	end
 
+	local ScriptsHubPage: Frame? = nil
+
 	local function switchSidebarTab(tabName: string, instant: boolean?)
+		if ScriptsHubPage and ScriptsHubPage.Visible then
+			ScriptsHubPage.Visible = false
+			if activeTabName == tabName and SidebarTabs[tabName] then
+				SidebarTabs[tabName].Page.Visible = true
+				return
+			end
+		end
 		if activeTabName == tabName then
 			return
 		end
@@ -1298,7 +1307,7 @@ function NightSystem:CreateWindow(config: {
 
 	local HomeHeaderTitle = Instance.new("TextLabel")
 	HomeHeaderTitle.Name = "HeaderTitle"
-	HomeHeaderTitle.Size = UDim2.new(1, 0, 0, 20)
+	HomeHeaderTitle.Size = UDim2.new(1, -140, 0, 20)
 	HomeHeaderTitle.Position = UDim2.new(0, 0, 0, 0)
 	HomeHeaderTitle.BackgroundTransparency = 1
 	HomeHeaderTitle.Font = Enum.Font.GothamBold
@@ -1310,7 +1319,7 @@ function NightSystem:CreateWindow(config: {
 
 	local HomeHeaderSub = Instance.new("TextLabel")
 	HomeHeaderSub.Name = "HeaderSubtitle"
-	HomeHeaderSub.Size = UDim2.new(1, 0, 0, 16)
+	HomeHeaderSub.Size = UDim2.new(1, -140, 0, 16)
 	HomeHeaderSub.Position = UDim2.new(0, 0, 0, 22)
 	HomeHeaderSub.BackgroundTransparency = 1
 	HomeHeaderSub.Font = Enum.Font.GothamMedium
@@ -1319,6 +1328,160 @@ function NightSystem:CreateWindow(config: {
 	HomeHeaderSub.TextSize = 13
 	HomeHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 	HomeHeaderSub.Parent = HomePage
+
+	-- Top-Right "All Scripts" Button in Home Tab
+	local AllScriptsBtn = Instance.new("TextButton")
+	AllScriptsBtn.Name = "AllScriptsButton"
+	AllScriptsBtn.Size = UDim2.new(0, 118, 0, 32)
+	AllScriptsBtn.Position = UDim2.new(1, 0, 0, 2)
+	AllScriptsBtn.AnchorPoint = Vector2.new(1, 0)
+	AllScriptsBtn.BackgroundColor3 = THEME.CardBackground
+	AllScriptsBtn.BorderSizePixel = 0
+	AllScriptsBtn.AutoButtonColor = false
+	AllScriptsBtn.Text = ""
+	AllScriptsBtn.Parent = HomePage
+	createCorner(AllScriptsBtn, 8)
+	local AllScriptsStroke = createStroke(AllScriptsBtn, THEME.Stroke, 1, 0.15)
+
+	local AllScriptsLabel = Instance.new("TextLabel")
+	AllScriptsLabel.Size = UDim2.new(1, -30, 1, 0)
+	AllScriptsLabel.Position = UDim2.new(0, 12, 0, 0)
+	AllScriptsLabel.BackgroundTransparency = 1
+	AllScriptsLabel.Font = Enum.Font.GothamBold
+	AllScriptsLabel.Text = "All Scripts"
+	AllScriptsLabel.TextColor3 = THEME.TextPrimary
+	AllScriptsLabel.TextSize = 12
+	AllScriptsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	AllScriptsLabel.Parent = AllScriptsBtn
+
+	local AllScriptsArrow = Instance.new("ImageLabel")
+	AllScriptsArrow.Size = UDim2.new(0, 14, 0, 14)
+	AllScriptsArrow.Position = UDim2.new(1, -10, 0.5, 0)
+	AllScriptsArrow.AnchorPoint = Vector2.new(1, 0.5)
+	AllScriptsArrow.BackgroundTransparency = 1
+	AllScriptsArrow.Image = ASSETS.ChevronRight
+	AllScriptsArrow.ImageColor3 = THEME.TextSecondary
+	AllScriptsArrow.Parent = AllScriptsBtn
+
+	AllScriptsBtn.MouseEnter:Connect(function()
+		tween(AllScriptsBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
+		tween(AllScriptsStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
+		tween(AllScriptsArrow, TWEEN_FAST, { ImageColor3 = THEME.Accent })
+	end)
+	AllScriptsBtn.MouseLeave:Connect(function()
+		tween(AllScriptsBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
+		tween(AllScriptsStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.15 })
+		tween(AllScriptsArrow, TWEEN_FAST, { ImageColor3 = THEME.TextSecondary })
+	end)
+
+	-- Dedicated "All Scripts" Hub View (Opened when clicking All Scripts in Home Tab)
+	ScriptsHubPage = Instance.new("Frame")
+	ScriptsHubPage.Name = "ScriptsHub_Page"
+	ScriptsHubPage.Size = UDim2.new(1, 0, 1, 0)
+	ScriptsHubPage.BackgroundTransparency = 1
+	ScriptsHubPage.Visible = false
+	ScriptsHubPage.Parent = ContentFrame
+	createPadding(ScriptsHubPage, 24, 24, 24, 24)
+
+	local HubHeaderTitle = Instance.new("TextLabel")
+	HubHeaderTitle.Size = UDim2.new(1, -140, 0, 20)
+	HubHeaderTitle.Position = UDim2.new(0, 0, 0, 0)
+	HubHeaderTitle.BackgroundTransparency = 1
+	HubHeaderTitle.Font = Enum.Font.GothamBold
+	HubHeaderTitle.Text = "Night System Scripts"
+	HubHeaderTitle.TextColor3 = THEME.TextHeaderTitle
+	HubHeaderTitle.TextSize = 18
+	HubHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+	HubHeaderTitle.Parent = ScriptsHubPage
+
+	local HubHeaderSub = Instance.new("TextLabel")
+	HubHeaderSub.Size = UDim2.new(1, -140, 0, 16)
+	HubHeaderSub.Position = UDim2.new(0, 0, 0, 22)
+	HubHeaderSub.BackgroundTransparency = 1
+	HubHeaderSub.Font = Enum.Font.GothamMedium
+	HubHeaderSub.Text = "Select a script below to execute it immediately"
+	HubHeaderSub.TextColor3 = THEME.TextHeaderSub
+	HubHeaderSub.TextSize = 13
+	HubHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
+	HubHeaderSub.Parent = ScriptsHubPage
+
+	local BackToHomeBtn = Instance.new("TextButton")
+	BackToHomeBtn.Name = "BackToHomeButton"
+	BackToHomeBtn.Size = UDim2.new(0, 118, 0, 32)
+	BackToHomeBtn.Position = UDim2.new(1, 0, 0, 2)
+	BackToHomeBtn.AnchorPoint = Vector2.new(1, 0)
+	BackToHomeBtn.BackgroundColor3 = THEME.CardBackground
+	BackToHomeBtn.BorderSizePixel = 0
+	BackToHomeBtn.AutoButtonColor = false
+	BackToHomeBtn.Font = Enum.Font.GothamBold
+	BackToHomeBtn.Text = "‹  Back to Home"
+	BackToHomeBtn.TextColor3 = THEME.TextPrimary
+	BackToHomeBtn.TextSize = 12
+	BackToHomeBtn.Parent = ScriptsHubPage
+	createCorner(BackToHomeBtn, 8)
+	local BackHomeStroke = createStroke(BackToHomeBtn, THEME.Stroke, 1, 0.15)
+
+	BackToHomeBtn.MouseEnter:Connect(function()
+		tween(BackToHomeBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
+		tween(BackHomeStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
+	end)
+	BackToHomeBtn.MouseLeave:Connect(function()
+		tween(BackToHomeBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
+		tween(BackHomeStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.15 })
+	end)
+
+	local HubScroll = Instance.new("ScrollingFrame")
+	HubScroll.Name = "HubScriptsScroll"
+	HubScroll.Size = UDim2.new(1, 0, 1, -52)
+	HubScroll.Position = UDim2.new(0, 0, 0, 52)
+	HubScroll.BackgroundTransparency = 1
+	HubScroll.BorderSizePixel = 0
+	HubScroll.ScrollBarThickness = 2
+	HubScroll.ScrollBarImageColor3 = THEME.Accent
+	HubScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	HubScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	HubScroll.Parent = ScriptsHubPage
+	createPadding(HubScroll, 2, 10, 2, 6)
+
+	local HubListLayout = Instance.new("UIListLayout")
+	HubListLayout.FillDirection = Enum.FillDirection.Vertical
+	HubListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	HubListLayout.Padding = UDim.new(0, 8)
+	HubListLayout.Parent = HubScroll
+
+	local EmptyHubPlaceholder = Instance.new("Frame")
+	EmptyHubPlaceholder.Name = "PlaceholderCard"
+	EmptyHubPlaceholder.Size = UDim2.new(1, 0, 0, 64)
+	EmptyHubPlaceholder.BackgroundColor3 = THEME.CardBackground
+	EmptyHubPlaceholder.BorderSizePixel = 0
+	EmptyHubPlaceholder.Parent = HubScroll
+	createCorner(EmptyHubPlaceholder, 8)
+	createStroke(EmptyHubPlaceholder, THEME.Stroke, 1, 0.2)
+
+	local EmptyHubText = Instance.new("TextLabel")
+	EmptyHubText.Size = UDim2.new(1, -28, 1, 0)
+	EmptyHubText.Position = UDim2.new(0, 14, 0, 0)
+	EmptyHubText.BackgroundTransparency = 1
+	EmptyHubText.Font = Enum.Font.GothamMedium
+	EmptyHubText.Text = "Night System Script Hub — Ready for your scripts."
+	EmptyHubText.TextColor3 = THEME.TextSecondary
+	EmptyHubText.TextSize = 13
+	EmptyHubText.TextXAlignment = Enum.TextXAlignment.Left
+	EmptyHubText.Parent = EmptyHubPlaceholder
+
+	AllScriptsBtn.MouseButton1Click:Connect(function()
+		HomePage.Visible = false
+		ScriptsHubPage.Visible = true
+		ScriptsHubPage.Position = UDim2.new(0, 0, 0, 8)
+		tween(ScriptsHubPage, TWEEN_MEDIUM, { Position = UDim2.new(0, 0, 0, 0) })
+	end)
+
+	BackToHomeBtn.MouseButton1Click:Connect(function()
+		ScriptsHubPage.Visible = false
+		HomePage.Visible = true
+		HomePage.Position = UDim2.new(0, 0, 0, 8)
+		tween(HomePage, TWEEN_MEDIUM, { Position = UDim2.new(0, 0, 0, 0) })
+	end)
 
 	-- Central Player Profile (88x88px Avatar, 10px UICorner, #2A2A2A UIStroke + 26px DisplayName & 15px @Name)
 	local ProfileSection = Instance.new("Frame")
@@ -3274,6 +3437,120 @@ function NightSystem:CreateWindow(config: {
 		return divHolder
 	end
 
+	function Window:AddHubScript(scriptInfo: {
+		Name: string?,
+		Game: string?,
+		Description: string?,
+		Loadstring: string?,
+		Url: string?,
+		Callback: (() -> ())?,
+	})
+		local info = scriptInfo or {}
+		local sName = tostring(info.Name or "Script")
+		local sDesc = tostring(info.Description or info.Game or "Click to execute this Night System script")
+
+		if EmptyHubPlaceholder and EmptyHubPlaceholder.Parent then
+			EmptyHubPlaceholder.Visible = false
+		end
+
+		local card = Instance.new("Frame")
+		card.Name = "HubScript_" .. sName
+		card.Size = UDim2.new(1, 0, 0, 56)
+		card.BackgroundColor3 = THEME.CardBackground
+		card.BorderSizePixel = 0
+		card.Parent = HubScroll
+		createCorner(card, 8)
+		local stroke = createStroke(card, THEME.Stroke, 1, 0.2)
+
+		local titleLbl = Instance.new("TextLabel")
+		titleLbl.Size = UDim2.new(1, -120, 0, 16)
+		titleLbl.Position = UDim2.new(0, 14, 0, 10)
+		titleLbl.BackgroundTransparency = 1
+		titleLbl.Font = Enum.Font.GothamBold
+		titleLbl.Text = sName
+		titleLbl.TextColor3 = THEME.TextPrimary
+		titleLbl.TextSize = 13
+		titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+		titleLbl.TextTruncate = Enum.TextTruncate.AtEnd
+		titleLbl.Parent = card
+
+		local descLbl = Instance.new("TextLabel")
+		descLbl.Size = UDim2.new(1, -120, 0, 14)
+		descLbl.Position = UDim2.new(0, 14, 0, 29)
+		descLbl.BackgroundTransparency = 1
+		descLbl.Font = Enum.Font.GothamMedium
+		descLbl.Text = sDesc
+		descLbl.TextColor3 = THEME.TextSecondary
+		descLbl.TextSize = 11
+		descLbl.TextXAlignment = Enum.TextXAlignment.Left
+		descLbl.TextTruncate = Enum.TextTruncate.AtEnd
+		descLbl.Parent = card
+
+		local execBtn = Instance.new("TextButton")
+		execBtn.Size = UDim2.new(0, 84, 0, 28)
+		execBtn.Position = UDim2.new(1, -14, 0.5, 0)
+		execBtn.AnchorPoint = Vector2.new(1, 0.5)
+		execBtn.BackgroundColor3 = THEME.CardInner
+		execBtn.BorderSizePixel = 0
+		execBtn.AutoButtonColor = false
+		execBtn.Font = Enum.Font.GothamBold
+		execBtn.Text = "Execute"
+		execBtn.TextColor3 = THEME.TextPrimary
+		execBtn.TextSize = 11
+		execBtn.Parent = card
+		createCorner(execBtn, 6)
+		local execStroke = createStroke(execBtn, THEME.Stroke, 1, 0.15)
+
+		card.MouseEnter:Connect(function()
+			tween(card, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
+		end)
+		card.MouseLeave:Connect(function()
+			tween(card, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
+		end)
+
+		execBtn.MouseEnter:Connect(function()
+			tween(execBtn, TWEEN_FAST, { BackgroundColor3 = THEME.Accent, TextColor3 = THEME.MainBackground })
+			tween(execStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0 })
+		end)
+		execBtn.MouseLeave:Connect(function()
+			tween(execBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardInner, TextColor3 = THEME.TextPrimary })
+			tween(execStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.15 })
+		end)
+
+		execBtn.MouseButton1Click:Connect(function()
+			tween(stroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
+			task.delay(0.18, function()
+				if stroke.Parent then
+					tween(stroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
+				end
+			end)
+			NightSystem:Notify({
+				Title = "Night System Hub",
+				Content = "Executing " .. sName .. "...",
+				Duration = 3,
+			})
+			task.spawn(function()
+				if type(info.Callback) == "function" then
+					safeCallback(info.Callback)
+				elseif type(info.Url) == "string" and info.Url ~= "" then
+					local ok, fn = pcall(function()
+						return loadstring((game :: any):HttpGet(info.Url))
+					end)
+					if ok and type(fn) == "function" then
+						pcall(fn)
+					end
+				elseif type(info.Loadstring) == "string" and info.Loadstring ~= "" then
+					local ok, fn = pcall(loadstring, info.Loadstring)
+					if ok and type(fn) == "function" then
+						pcall(fn)
+					end
+				end
+			end)
+		end)
+
+		return card
+	end
+
 	function Window:SelectTab(tabName: string)
 		switchSidebarTab(tabName, false)
 	end
@@ -3328,6 +3605,9 @@ function NightSystem:CreateParagraph(...)
 end
 function NightSystem:CreateDivider(...)
 	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateDivider(...)
+end
+function NightSystem:AddHubScript(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):AddHubScript(...)
 end
 
 -- Auto-initialize the default Window with the built-in "Home" Tab immediately when the loadstring runs!
