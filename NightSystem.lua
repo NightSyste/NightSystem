@@ -1571,18 +1571,21 @@ function NightSystem:CreateWindow(config: {
 	HubScroll.Position = UDim2.new(0, 0, 0, 86)
 	HubScroll.BackgroundTransparency = 1
 	HubScroll.BorderSizePixel = 0
-	HubScroll.ScrollBarThickness = 2
+	HubScroll.ScrollBarThickness = 3
 	HubScroll.ScrollBarImageColor3 = THEME.Accent
 	HubScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	HubScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	HubScroll.Parent = ScriptsHubPage
-	createPadding(HubScroll, 2, 10, 2, 6)
+	createPadding(HubScroll, 2, 12, 2, 8)
 
-	local HubListLayout = Instance.new("UIListLayout")
-	HubListLayout.FillDirection = Enum.FillDirection.Vertical
-	HubListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	HubListLayout.Padding = UDim.new(0, 8)
-	HubListLayout.Parent = HubScroll
+	-- Side-by-Side Grid Layout (Alle Scripts nebeneinander mit Bild + Loadstring)
+	local HubGridLayout = Instance.new("UIGridLayout")
+	HubGridLayout.FillDirection = Enum.FillDirection.Horizontal
+	HubGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	HubGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	HubGridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+	HubGridLayout.CellSize = UDim2.new(0.5, -6, 0, 216)
+	HubGridLayout.Parent = HubScroll
 
 	local EmptyHubPlaceholder = Instance.new("Frame")
 	EmptyHubPlaceholder.Name = "PlaceholderCard"
@@ -1590,7 +1593,8 @@ function NightSystem:CreateWindow(config: {
 	EmptyHubPlaceholder.BackgroundColor3 = THEME.CardBackground
 	EmptyHubPlaceholder.BorderSizePixel = 0
 	EmptyHubPlaceholder.Visible = false
-	EmptyHubPlaceholder.Parent = HubScroll
+	EmptyHubPlaceholder.Parent = ScriptsHubPage
+	EmptyHubPlaceholder.Position = UDim2.new(0, 0, 0, 86)
 	createCorner(EmptyHubPlaceholder, 8)
 	createStroke(EmptyHubPlaceholder, THEME.Stroke, 1, 0.2)
 
@@ -3593,6 +3597,9 @@ function NightSystem:CreateWindow(config: {
 		Name: string?,
 		Game: string?,
 		Description: string?,
+		Slug: string?,
+		PlaceId: number?,
+		Image: string?,
 		Loadstring: string?,
 		Url: string?,
 		Callback: (() -> ())?,
@@ -3600,85 +3607,187 @@ function NightSystem:CreateWindow(config: {
 		local info = scriptInfo or {}
 		hubScriptCount += 1
 		local sName = tostring(info.Name or "Script")
+		local sSlug = tostring(info.Slug or "")
+		local sPlaceId = tonumber(info.PlaceId) or 0
 		local sUrl = tostring(info.Url or "")
 		local rawLoadstring = if type(info.Loadstring) == "string" and info.Loadstring ~= ""
 			then info.Loadstring
 			elseif sUrl ~= "" then 'loadstring(game:HttpGet("' .. sUrl .. '"))()'
 			else ""
-		local sDesc = tostring(info.Description or info.Game or "Night System Official Script • Free")
+		local sDesc = tostring(info.Description or info.Game or "Night System Official Script")
 
 		if EmptyHubPlaceholder and EmptyHubPlaceholder.Parent then
 			EmptyHubPlaceholder.Visible = false
 		end
 
+		-- Grid Card for side-by-side layout
 		local card = Instance.new("Frame")
 		card.Name = "HubScript_" .. sName
-		card.Size = UDim2.new(1, 0, 0, 56)
+		card.Size = UDim2.new(1, 0, 0, 226)
 		card.BackgroundColor3 = THEME.CardBackground
 		card.BorderSizePixel = 0
 		card.LayoutOrder = hubScriptCount
+		card.ClipsDescendants = true
 		card.Parent = HubScroll
-		createCorner(card, 8)
-		local stroke = createStroke(card, THEME.Stroke, 1, 0.2)
+		createCorner(card, 10)
+		local cardStroke = createStroke(card, THEME.Stroke, 1, 0.2)
 
-		-- Left Numbered Badge
-		local indexBadge = Instance.new("Frame")
-		indexBadge.Size = UDim2.new(0, 32, 0, 32)
-		indexBadge.Position = UDim2.new(0, 12, 0.5, 0)
-		indexBadge.AnchorPoint = Vector2.new(0, 0.5)
-		indexBadge.BackgroundColor3 = Color3.fromHex("#141619")
-		indexBadge.BorderSizePixel = 0
-		indexBadge.Parent = card
-		createCorner(indexBadge, 7)
-		createStroke(indexBadge, Color3.fromHex("#282C32"), 1, 0.2)
+		-- Top Thumbnail Image Container
+		local imgContainer = Instance.new("Frame")
+		imgContainer.Name = "ImageContainer"
+		imgContainer.Size = UDim2.new(1, 0, 0, 110)
+		imgContainer.Position = UDim2.new(0, 0, 0, 0)
+		imgContainer.BackgroundColor3 = Color3.fromHex("#141619")
+		imgContainer.BorderSizePixel = 0
+		imgContainer.ClipsDescendants = true
+		imgContainer.Parent = card
+		createCorner(imgContainer, 10)
 
-		local indexLbl = Instance.new("TextLabel")
-		indexLbl.Size = UDim2.new(1, 0, 1, 0)
-		indexLbl.BackgroundTransparency = 1
-		indexLbl.Font = Enum.Font.GothamBold
-		indexLbl.Text = string.format("%02d", hubScriptCount)
-		indexLbl.TextColor3 = THEME.TextSecondary
-		indexLbl.TextSize = 11
-		indexLbl.Parent = indexBadge
+		local imgLabel = Instance.new("ImageLabel")
+		imgLabel.Name = "ScriptImage"
+		imgLabel.Size = UDim2.new(1, 0, 1, 0)
+		imgLabel.BackgroundTransparency = 1
+		imgLabel.ScaleType = Enum.ScaleType.Crop
+		imgLabel.Parent = imgContainer
 
+		-- Fallback to native Roblox game thumbnail
+		if sPlaceId > 0 then
+			imgLabel.Image = "rbxthumb://type=GameThumbnail&id=" .. tostring(sPlaceId) .. "&w=480&h=270"
+		end
+
+		-- Load image from GitHub into executor filesystem via getcustomasset
+		if sSlug ~= "" then
+			task.spawn(function()
+				local gEnv = (type(getgenv) == "function" and getgenv()) or getfenv()
+				local writeFn = gEnv.writefile or (writefile :: any)
+				local isfileFn = gEnv.isfile or (isfile :: any)
+				local isfolderFn = gEnv.isfolder or (isfolder :: any)
+				local makefolderFn = gEnv.makefolder or (makefolder :: any)
+				local getassetFn = gEnv.getcustomasset or gEnv.getsynasset or (getcustomasset :: any)
+
+				if type(getassetFn) == "function" and type(writeFn) == "function" then
+					local folder = "NightSystem_Assets"
+					if type(isfolderFn) == "function" and type(makefolderFn) == "function" then
+						if not isfolderFn(folder) then
+							pcall(makefolderFn, folder)
+						end
+					end
+					local filePath = folder .. "/" .. sSlug .. ".png"
+					local exists = type(isfileFn) == "function" and isfileFn(filePath)
+					if not exists then
+						local imgUrl = "https://raw.githubusercontent.com/NightSyste/NightSystem/main/images/" .. sSlug .. ".png"
+						local ok, imgData = pcall(function()
+							return (game :: any):HttpGet(imgUrl)
+						end)
+						if ok and imgData and #imgData > 100 then
+							pcall(writeFn, filePath, imgData)
+							exists = true
+						end
+					end
+					if exists then
+						local okA, asset = pcall(getassetFn, filePath)
+						if okA and asset then
+							imgLabel.Image = asset
+						end
+					end
+				end
+			end)
+		end
+
+		-- Gradient blend at the bottom of the image
+		local imgGrad = Instance.new("Frame")
+		imgGrad.Size = UDim2.new(1, 0, 0, 36)
+		imgGrad.Position = UDim2.new(0, 0, 1, -36)
+		imgGrad.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		imgGrad.BorderSizePixel = 0
+		imgGrad.Parent = imgContainer
+
+		local grad = Instance.new("UIGradient")
+		grad.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
+		grad.Rotation = 90
+		grad.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(1, 0.4),
+		})
+		grad.Parent = imgGrad
+
+		-- Top-Left Number Badge on the image
+		local numBadge = Instance.new("Frame")
+		numBadge.Size = UDim2.new(0, 26, 0, 18)
+		numBadge.Position = UDim2.new(0, 8, 0, 8)
+		numBadge.BackgroundColor3 = Color3.fromHex("#0F1114")
+		numBadge.BackgroundTransparency = 0.25
+		numBadge.BorderSizePixel = 0
+		numBadge.Parent = imgContainer
+		createCorner(numBadge, 5)
+		createStroke(numBadge, Color3.fromHex("#2C3036"), 1, 0.2)
+
+		local numLbl = Instance.new("TextLabel")
+		numLbl.Size = UDim2.new(1, 0, 1, 0)
+		numLbl.BackgroundTransparency = 1
+		numLbl.Font = Enum.Font.GothamBold
+		numLbl.Text = string.format("%02d", hubScriptCount)
+		numLbl.TextColor3 = THEME.TextPrimary
+		numLbl.TextSize = 10
+		numLbl.Parent = numBadge
+
+		-- Script / Game Name
 		local titleLbl = Instance.new("TextLabel")
-		titleLbl.Size = UDim2.new(1, -214, 0, 16)
-		titleLbl.Position = UDim2.new(0, 54, 0, 10)
+		titleLbl.Size = UDim2.new(1, -16, 0, 16)
+		titleLbl.Position = UDim2.new(0, 8, 0, 116)
 		titleLbl.BackgroundTransparency = 1
 		titleLbl.Font = Enum.Font.GothamBold
 		titleLbl.Text = sName
 		titleLbl.TextColor3 = THEME.TextPrimary
-		titleLbl.TextSize = 13
+		titleLbl.TextSize = 12
 		titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 		titleLbl.TextTruncate = Enum.TextTruncate.AtEnd
 		titleLbl.Parent = card
 
-		local descLbl = Instance.new("TextLabel")
-		descLbl.Size = UDim2.new(1, -214, 0, 14)
-		descLbl.Position = UDim2.new(0, 54, 0, 29)
-		descLbl.BackgroundTransparency = 1
-		descLbl.Font = Enum.Font.GothamMedium
-		descLbl.Text = sDesc
-		descLbl.TextColor3 = THEME.TextSecondary
-		descLbl.TextSize = 11
-		descLbl.TextXAlignment = Enum.TextXAlignment.Left
-		descLbl.TextTruncate = Enum.TextTruncate.AtEnd
-		descLbl.Parent = card
+		-- Loadstring Preview Code Box (Directly in front of the user)
+		local codeBoxHolder = Instance.new("Frame")
+		codeBoxHolder.Size = UDim2.new(1, -16, 0, 36)
+		codeBoxHolder.Position = UDim2.new(0, 8, 0, 136)
+		codeBoxHolder.BackgroundColor3 = Color3.fromHex("#0F1113")
+		codeBoxHolder.BorderSizePixel = 0
+		codeBoxHolder.Parent = card
+		createCorner(codeBoxHolder, 6)
+		local codeBoxStroke = createStroke(codeBoxHolder, Color3.fromHex("#22252A"), 1, 0.2)
 
-		-- Copy Loadstring Button
+		local codeBox = Instance.new("TextBox")
+		codeBox.Size = UDim2.new(1, -12, 1, 0)
+		codeBox.Position = UDim2.new(0, 6, 0, 0)
+		codeBox.BackgroundTransparency = 1
+		codeBox.Font = Enum.Font.Code
+		codeBox.Text = rawLoadstring
+		codeBox.TextColor3 = Color3.fromHex("#9EABB8")
+		codeBox.TextSize = 9
+		codeBox.TextWrapped = true
+		codeBox.TextXAlignment = Enum.TextXAlignment.Left
+		codeBox.TextYAlignment = Enum.TextYAlignment.Center
+		codeBox.ClearTextOnFocus = false
+		codeBox.Parent = codeBoxHolder
+
+		-- Buttons Bar at the bottom
+		local btnBar = Instance.new("Frame")
+		btnBar.Size = UDim2.new(1, -16, 0, 28)
+		btnBar.Position = UDim2.new(0, 8, 0, 180)
+		btnBar.BackgroundTransparency = 1
+		btnBar.Parent = card
+
+		-- Copy Button
 		local copyBtn = Instance.new("TextButton")
 		copyBtn.Name = "CopyButton"
-		copyBtn.Size = UDim2.new(0, 58, 0, 28)
-		copyBtn.Position = UDim2.new(1, -100, 0.5, 0)
-		copyBtn.AnchorPoint = Vector2.new(1, 0.5)
-		copyBtn.BackgroundColor3 = THEME.CardInner
+		copyBtn.Size = UDim2.new(0.48, -4, 1, 0)
+		copyBtn.Position = UDim2.new(0, 0, 0, 0)
+		copyBtn.BackgroundColor3 = Color3.fromHex("#17191C")
 		copyBtn.BorderSizePixel = 0
 		copyBtn.AutoButtonColor = false
 		copyBtn.Font = Enum.Font.GothamBold
 		copyBtn.Text = "Copy"
 		copyBtn.TextColor3 = THEME.TextSecondary
 		copyBtn.TextSize = 11
-		copyBtn.Parent = card
+		copyBtn.Parent = btnBar
 		createCorner(copyBtn, 6)
 		local copyStroke = createStroke(copyBtn, THEME.Stroke, 1, 0.2)
 
@@ -3687,7 +3796,7 @@ function NightSystem:CreateWindow(config: {
 			tween(copyStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.2 })
 		end)
 		copyBtn.MouseLeave:Connect(function()
-			tween(copyBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardInner, TextColor3 = THEME.TextSecondary })
+			tween(copyBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#17191C"), TextColor3 = THEME.TextSecondary })
 			tween(copyStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
 		end)
 
@@ -3696,15 +3805,17 @@ function NightSystem:CreateWindow(config: {
 			local clipFn = gEnv.setclipboard or gEnv.toclipboard or (setclipboard :: any)
 			if type(clipFn) == "function" and rawLoadstring ~= "" then
 				pcall(clipFn, rawLoadstring)
-				copyBtn.Text = "Copied"
-				task.delay(1.2, function()
+				copyBtn.Text = "Copied ✓"
+				tween(copyBtn, TWEEN_FAST, { TextColor3 = Color3.fromHex("#4ADE80") })
+				task.delay(1.5, function()
 					if copyBtn.Parent then
 						copyBtn.Text = "Copy"
+						tween(copyBtn, TWEEN_FAST, { TextColor3 = THEME.TextSecondary })
 					end
 				end)
 				NightSystem:Notify({
-					Title = "Script Copied",
-					Content = sName .. " loadstring copied to clipboard!",
+					Title = "Loadstring Copied",
+					Content = sName .. " copied to clipboard!",
 					Duration = 2.5,
 				})
 			else
@@ -3716,49 +3827,41 @@ function NightSystem:CreateWindow(config: {
 			end
 		end)
 
-		-- Execute Script Button
+		-- Execute Button
 		local execBtn = Instance.new("TextButton")
 		execBtn.Name = "ExecuteButton"
-		execBtn.Size = UDim2.new(0, 78, 0, 28)
-		execBtn.Position = UDim2.new(1, -14, 0.5, 0)
-		execBtn.AnchorPoint = Vector2.new(1, 0.5)
-		execBtn.BackgroundColor3 = THEME.CardInner
+		execBtn.Size = UDim2.new(0.52, 0, 1, 0)
+		execBtn.Position = UDim2.new(0.48, 4, 0, 0)
+		execBtn.BackgroundColor3 = Color3.fromHex("#1E2227")
 		execBtn.BorderSizePixel = 0
 		execBtn.AutoButtonColor = false
 		execBtn.Font = Enum.Font.GothamBold
-		execBtn.Text = "Execute"
+		execBtn.Text = "▶ Execute"
 		execBtn.TextColor3 = THEME.TextPrimary
 		execBtn.TextSize = 11
-		execBtn.Parent = card
+		execBtn.Parent = btnBar
 		createCorner(execBtn, 6)
-		local execStroke = createStroke(execBtn, THEME.Stroke, 1, 0.15)
-
-		card.MouseEnter:Connect(function()
-			tween(card, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
-		end)
-		card.MouseLeave:Connect(function()
-			tween(card, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
-		end)
+		local execStroke = createStroke(execBtn, Color3.fromHex("#2E333B"), 1, 0.15)
 
 		execBtn.MouseEnter:Connect(function()
 			tween(execBtn, TWEEN_FAST, { BackgroundColor3 = THEME.Accent, TextColor3 = THEME.MainBackground })
 			tween(execStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0 })
 		end)
 		execBtn.MouseLeave:Connect(function()
-			tween(execBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardInner, TextColor3 = THEME.TextPrimary })
-			tween(execStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.15 })
+			tween(execBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#1E2227"), TextColor3 = THEME.TextPrimary })
+			tween(execStroke, TWEEN_FAST, { Color = Color3.fromHex("#2E333B"), Transparency = 0.15 })
 		end)
 
 		execBtn.MouseButton1Click:Connect(function()
-			tween(stroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
+			tween(cardStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
 			task.delay(0.18, function()
-				if stroke.Parent then
-					tween(stroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
+				if cardStroke.Parent then
+					tween(cardStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
 				end
 			end)
 			NightSystem:Notify({
-				Title = "Night System Hub",
-				Content = "Executing " .. sName .. "...",
+				Title = "Executing Script",
+				Content = "Starting " .. sName .. "...",
 				Duration = 3,
 			})
 			task.spawn(function()
@@ -3780,9 +3883,18 @@ function NightSystem:CreateWindow(config: {
 			end)
 		end)
 
+		card.MouseEnter:Connect(function()
+			tween(card, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
+			tween(cardStroke, TWEEN_FAST, { Color = THEME.StrokeActive, Transparency = 0.1 })
+		end)
+		card.MouseLeave:Connect(function()
+			tween(card, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
+			tween(cardStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
+		end)
+
 		table.insert(hubSearchEntries, {
 			Card = card,
-			Query = string.lower(sName .. " " .. sDesc .. " " .. sUrl),
+			Query = string.lower(sName .. " " .. sDesc .. " " .. sSlug .. " " .. sUrl),
 		})
 
 		return card
@@ -3792,87 +3904,121 @@ function NightSystem:CreateWindow(config: {
 	local DEFAULT_HUB_SCRIPTS = {
 		{
 			Name = "Build A Boat For Treasure",
-			Description = "Auto Farm, Build Tools & Treasure Teleport • Build-A-Boat-For-Treasure",
+			Slug = "Build-A-Boat-For-Treasure",
+			PlaceId = 537413528,
+			Description = "Auto Farm, Build Tools & Treasure Teleport",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Build-A-Boat-For-Treasure",
 		},
 		{
 			Name = "Fling Things and People",
-			Description = "Super Fling, Anti-Grab & Reach • Fling-Things-and-People",
+			Slug = "Fling-Things-and-People",
+			PlaceId = 6961824067,
+			Description = "Super Fling, Anti-Grab & Reach",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Fling-Things-and-People",
 		},
 		{
 			Name = "Work at a Pizza Place",
-			Description = "Auto Job, Instant Delivery & Cash Farm • Work-at-a-Pizza-Place",
+			Slug = "Work-at-a-Pizza-Place",
+			PlaceId = 192800,
+			Description = "Auto Job, Instant Delivery & Cash Farm",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Work-at-a-Pizza-Place",
 		},
 		{
 			Name = "Murderers VS Sheriffs",
-			Description = "Silent Aim, Hitbox Expander & ESP • MurderVSsheriff",
+			Slug = "MurderVSsheriff",
+			PlaceId = 12355337193,
+			Description = "Silent Aim, Hitbox Expander & ESP",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/MurderVSsheriff",
 		},
 		{
 			Name = "Sniper VS Runner",
-			Description = "Auto Win, Aimbot & Speed • SniperVSrunner",
+			Slug = "SniperVSrunner",
+			PlaceId = 16568042538,
+			Description = "Auto Win, Aimbot & Speed",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/SniperVSrunner",
 		},
 		{
 			Name = "Dexter Escape",
-			Description = "Auto Escape, ESP & Teleports • Dexter-Escape",
+			Slug = "Dexter-Escape",
+			PlaceId = 92122513197996,
+			Description = "Auto Escape, ESP & Teleports",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Dexter-Escape",
 		},
 		{
 			Name = "Water Escape",
-			Description = "Instant Escape, Oxygen & Speed • waterescape",
+			Slug = "waterescape",
+			PlaceId = 0,
+			Description = "Instant Escape, Oxygen & Speed",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/waterescape",
 		},
 		{
 			Name = "German Voice",
-			Description = "Voice Chat Utilities, Troll & Movement • GermanVoice",
+			Slug = "GermanVoice",
+			PlaceId = 6884319169,
+			Description = "Voice Chat Utilities, Troll & Movement",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/GermanVoice",
 		},
 		{
 			Name = "Beach Escape",
-			Description = "Auto Complete, Checkpoints & Fly • BeachEscape",
+			Slug = "BeachEscape",
+			PlaceId = 0,
+			Description = "Auto Complete, Checkpoints & Fly",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/BeachEscape",
 		},
 		{
 			Name = "Lucky Blocks Battlegrounds",
-			Description = "Instant Lucky Blocks, All Items & Combat • Luckblock",
+			Slug = "Luckblock",
+			PlaceId = 662417684,
+			Description = "Instant Lucky Blocks, All Items & Combat",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Luckblock",
 		},
 		{
 			Name = "Streamer Life",
-			Description = "Infinite Money, Auto Stream & Upgrades • streamer",
+			Slug = "streamer",
+			PlaceId = 16483433878,
+			Description = "Infinite Money, Auto Stream & Upgrades",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/streamer",
 		},
 		{
 			Name = "Bundes RP",
-			Description = "Roleplay Utilities, Vehicle Mods & ESP • bundesRp",
+			Slug = "bundesRp",
+			PlaceId = 13830755469,
+			Description = "Roleplay Utilities, Vehicle Mods & ESP",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/bundesRp",
 		},
 		{
 			Name = "Flick FPS",
-			Description = "Aimbot, Silent Aim & Wallhack ESP • FlickFPS",
+			Slug = "FlickFPS",
+			PlaceId = 17625359962,
+			Description = "Aimbot, Silent Aim & Wallhack ESP",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/FlickFPS",
 		},
 		{
 			Name = "Arsenal",
-			Description = "Silent Aim, Kill All, ESP & Gun Mods • Arselnal",
+			Slug = "Arselnal",
+			PlaceId = 286090429,
+			Description = "Silent Aim, Kill All, ESP & Gun Mods",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Arselnal",
 		},
 		{
 			Name = "99 Nights",
-			Description = "Survival ESP, Fullbright & Auto Evade • 99Nights",
+			Slug = "99Nights",
+			PlaceId = 126884695634066,
+			Description = "Survival ESP, Fullbright & Auto Evade",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/99Nights",
 		},
 		{
 			Name = "Emergency Hamburg (Notruf Hamburg)",
-			Description = "Main Script, Car Fly, ESP & Police Bypass • MainEH",
+			Slug = "MainEH",
+			PlaceId = 7711635737,
+			Description = "Main Script, Car Fly, ESP & Police Bypass",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/MainEH",
 		},
 		{
 			Name = "Murder Mystery 2 (MM2)",
-			Description = "Role ESP, Auto Grab Gun, Coin Farm & Fly • mm2",
+			Slug = "mm2",
+			PlaceId = 142823291,
+			Description = "Role ESP, Auto Grab Gun, Coin Farm & Fly",
 			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/mm2",
 		},
 	}
