@@ -500,11 +500,11 @@ function NightSystem:CreateWindow(config: {
 	DragPill.Parent = TopBar
 	createCorner(DragPill, 4)
 
-	-- Top-Left Control Buttons (X, □, ≡)
+	-- Top-Left Control Buttons (Crisp Geometric Icons: Close, Maximize, Minimize)
 	local ControlsHolder = Instance.new("Frame")
 	ControlsHolder.Name = "WindowControls"
-	ControlsHolder.Size = UDim2.new(0, 84, 0, 24)
-	ControlsHolder.Position = UDim2.new(0, 12, 0, 10)
+	ControlsHolder.Size = UDim2.new(0, 90, 0, 26)
+	ControlsHolder.Position = UDim2.new(0, 12, 0, 9)
 	ControlsHolder.BackgroundTransparency = 1
 	ControlsHolder.Parent = TopBar
 
@@ -515,39 +515,106 @@ function NightSystem:CreateWindow(config: {
 	ControlsList.Padding = UDim.new(0, 6)
 	ControlsList.Parent = ControlsHolder
 
-	local function createControlBtn(name: string, text: string, size: number): TextButton
+	local function createControlBase(name: string, isClose: boolean?): (TextButton, UIStroke)
 		local btn = Instance.new("TextButton")
 		btn.Name = name
-		btn.Size = UDim2.new(0, 24, 0, 24)
-		btn.BackgroundColor3 = THEME.ControlBtnBg
+		btn.Size = UDim2.new(0, 26, 0, 26)
+		btn.BackgroundColor3 = Color3.fromHex("#181A1D")
 		btn.BorderSizePixel = 0
 		btn.AutoButtonColor = false
-		btn.Font = Enum.Font.GothamBold
-		btn.Text = text
-		btn.TextColor3 = THEME.TextSecondary
-		btn.TextSize = size
+		btn.Text = ""
 		btn.Parent = ControlsHolder
-		createCorner(btn, 6)
-		createStroke(btn, THEME.Stroke, 1, 0.2)
-
-		btn.MouseEnter:Connect(function()
-			tween(btn, TWEEN_FAST, {
-				BackgroundColor3 = THEME.ControlBtnHover,
-				TextColor3 = THEME.TextPrimary,
-			})
-		end)
-		btn.MouseLeave:Connect(function()
-			tween(btn, TWEEN_FAST, {
-				BackgroundColor3 = THEME.ControlBtnBg,
-				TextColor3 = THEME.TextSecondary,
-			})
-		end)
-		return btn
+		createCorner(btn, 7)
+		local stroke = createStroke(btn, Color3.fromHex("#282B30"), 1, 0.15)
+		return btn, stroke
 	end
 
-	local CloseBtn = createControlBtn("CloseButton", "X", 11)
-	local MaximizeBtn = createControlBtn("MaximizeButton", "□", 13)
-	local MinimizeBtn = createControlBtn("MinimizeButton", "≡", 14)
+	-- 1. Close Button (Crisp X Cross with subtle red hover glow)
+	local CloseBtn, CloseStroke = createControlBase("CloseButton", true)
+	local xLine1 = Instance.new("Frame")
+	xLine1.Size = UDim2.new(0, 11, 0, 1.8)
+	xLine1.Position = UDim2.new(0.5, 0, 0.5, 0)
+	xLine1.AnchorPoint = Vector2.new(0.5, 0.5)
+	xLine1.Rotation = 45
+	xLine1.BackgroundColor3 = THEME.TextSecondary
+	xLine1.BorderSizePixel = 0
+	xLine1.Parent = CloseBtn
+	createCorner(xLine1, 2)
+
+	local xLine2 = Instance.new("Frame")
+	xLine2.Size = UDim2.new(0, 11, 0, 1.8)
+	xLine2.Position = UDim2.new(0.5, 0, 0.5, 0)
+	xLine2.AnchorPoint = Vector2.new(0.5, 0.5)
+	xLine2.Rotation = -45
+	xLine2.BackgroundColor3 = THEME.TextSecondary
+	xLine2.BorderSizePixel = 0
+	xLine2.Parent = CloseBtn
+	createCorner(xLine2, 2)
+
+	CloseBtn.MouseEnter:Connect(function()
+		tween(CloseBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#2B1719") })
+		tween(CloseStroke, TWEEN_FAST, { Color = THEME.AccentRed, Transparency = 0.1 })
+		tween(xLine1, TWEEN_FAST, { BackgroundColor3 = THEME.TextPrimary })
+		tween(xLine2, TWEEN_FAST, { BackgroundColor3 = THEME.TextPrimary })
+	end)
+	CloseBtn.MouseLeave:Connect(function()
+		tween(CloseBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#181A1D") })
+		tween(CloseStroke, TWEEN_FAST, { Color = Color3.fromHex("#282B30"), Transparency = 0.15 })
+		tween(xLine1, TWEEN_FAST, { BackgroundColor3 = THEME.TextSecondary })
+		tween(xLine2, TWEEN_FAST, { BackgroundColor3 = THEME.TextSecondary })
+	end)
+
+	-- 2. Maximize Button (Crisp Rounded Window Square)
+	local MaximizeBtn, MaxStroke = createControlBase("MaximizeButton", false)
+	local maxBox = Instance.new("Frame")
+	maxBox.Size = UDim2.new(0, 9, 0, 9)
+	maxBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+	maxBox.AnchorPoint = Vector2.new(0.5, 0.5)
+	maxBox.BackgroundTransparency = 1
+	maxBox.Parent = MaximizeBtn
+	createCorner(maxBox, 2)
+	local maxBoxStroke = createStroke(maxBox, THEME.TextSecondary, 1.5, 0)
+
+	MaximizeBtn.MouseEnter:Connect(function()
+		tween(MaximizeBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#22252A") })
+		tween(MaxStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.2 })
+		tween(maxBoxStroke, TWEEN_FAST, { Color = THEME.TextPrimary })
+	end)
+	MaximizeBtn.MouseLeave:Connect(function()
+		tween(MaximizeBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#181A1D") })
+		tween(MaxStroke, TWEEN_FAST, { Color = Color3.fromHex("#282B30"), Transparency = 0.15 })
+		tween(maxBoxStroke, TWEEN_FAST, { Color = THEME.TextSecondary })
+	end)
+
+	-- 3. Minimize Button (Crisp 3-Bar Hamburger Menu Icon)
+	local MinimizeBtn, MinStroke = createControlBase("MinimizeButton", false)
+	local minBars = {}
+	for i, yOff in ipairs({ -3.5, 0, 3.5 }) do
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(0, if i == 2 then 9 else 11, 0, 1.6)
+		bar.Position = UDim2.new(0.5, 0, 0.5, yOff)
+		bar.AnchorPoint = Vector2.new(0.5, 0.5)
+		bar.BackgroundColor3 = THEME.TextSecondary
+		bar.BorderSizePixel = 0
+		bar.Parent = MinimizeBtn
+		createCorner(bar, 2)
+		table.insert(minBars, bar)
+	end
+
+	MinimizeBtn.MouseEnter:Connect(function()
+		tween(MinimizeBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#22252A") })
+		tween(MinStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.2 })
+		for _, bar in ipairs(minBars) do
+			tween(bar, TWEEN_FAST, { BackgroundColor3 = THEME.TextPrimary })
+		end
+	end)
+	MinimizeBtn.MouseLeave:Connect(function()
+		tween(MinimizeBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#181A1D") })
+		tween(MinStroke, TWEEN_FAST, { Color = Color3.fromHex("#282B30"), Transparency = 0.15 })
+		for _, bar in ipairs(minBars) do
+			tween(bar, TWEEN_FAST, { BackgroundColor3 = THEME.TextSecondary })
+		end
+	end)
 
 	local function makeDraggable(handle: GuiObject, target: GuiObject, pill: Frame?)
 		local isDragging = false
@@ -1329,23 +1396,47 @@ function NightSystem:CreateWindow(config: {
 	HomeHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 	HomeHeaderSub.Parent = HomePage
 
-	-- Top-Right "All Scripts" Button in Home Tab
+	-- Top-Right "All Scripts" Button in Home Tab (Sleek Pill with Grid Icon & Accent Indicator)
 	local AllScriptsBtn = Instance.new("TextButton")
 	AllScriptsBtn.Name = "AllScriptsButton"
-	AllScriptsBtn.Size = UDim2.new(0, 118, 0, 32)
+	AllScriptsBtn.Size = UDim2.new(0, 128, 0, 34)
 	AllScriptsBtn.Position = UDim2.new(1, 0, 0, 2)
 	AllScriptsBtn.AnchorPoint = Vector2.new(1, 0)
-	AllScriptsBtn.BackgroundColor3 = THEME.CardBackground
+	AllScriptsBtn.BackgroundColor3 = Color3.fromHex("#181B1E")
 	AllScriptsBtn.BorderSizePixel = 0
 	AllScriptsBtn.AutoButtonColor = false
 	AllScriptsBtn.Text = ""
 	AllScriptsBtn.Parent = HomePage
 	createCorner(AllScriptsBtn, 8)
-	local AllScriptsStroke = createStroke(AllScriptsBtn, THEME.Stroke, 1, 0.15)
+	local AllScriptsStroke = createStroke(AllScriptsBtn, Color3.fromHex("#2A2E33"), 1, 0.1)
+
+	-- Mini 2x2 Grid Icon on the left of All Scripts button
+	local GridIconHolder = Instance.new("Frame")
+	GridIconHolder.Size = UDim2.new(0, 12, 0, 12)
+	GridIconHolder.Position = UDim2.new(0, 12, 0.5, 0)
+	GridIconHolder.AnchorPoint = Vector2.new(0, 0.5)
+	GridIconHolder.BackgroundTransparency = 1
+	GridIconHolder.Parent = AllScriptsBtn
+
+	for _, pos in ipairs({
+		UDim2.new(0, 0, 0, 0),
+		UDim2.new(1, -5, 0, 0),
+		UDim2.new(0, 0, 1, -5),
+		UDim2.new(1, -5, 1, -5),
+	}) do
+		local sq = Instance.new("Frame")
+		sq.Size = UDim2.new(0, 5, 0, 5)
+		sq.Position = pos
+		sq.BackgroundColor3 = THEME.Accent
+		sq.BackgroundTransparency = 0.15
+		sq.BorderSizePixel = 0
+		sq.Parent = GridIconHolder
+		createCorner(sq, 1)
+	end
 
 	local AllScriptsLabel = Instance.new("TextLabel")
-	AllScriptsLabel.Size = UDim2.new(1, -30, 1, 0)
-	AllScriptsLabel.Position = UDim2.new(0, 12, 0, 0)
+	AllScriptsLabel.Size = UDim2.new(1, -54, 1, 0)
+	AllScriptsLabel.Position = UDim2.new(0, 30, 0, 0)
 	AllScriptsLabel.BackgroundTransparency = 1
 	AllScriptsLabel.Font = Enum.Font.GothamBold
 	AllScriptsLabel.Text = "All Scripts"
@@ -1364,14 +1455,14 @@ function NightSystem:CreateWindow(config: {
 	AllScriptsArrow.Parent = AllScriptsBtn
 
 	AllScriptsBtn.MouseEnter:Connect(function()
-		tween(AllScriptsBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
-		tween(AllScriptsStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
-		tween(AllScriptsArrow, TWEEN_FAST, { ImageColor3 = THEME.Accent })
+		tween(AllScriptsBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#22262B") })
+		tween(AllScriptsStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0 })
+		tween(AllScriptsArrow, TWEEN_FAST, { ImageColor3 = THEME.Accent, Position = UDim2.new(1, -8, 0.5, 0) })
 	end)
 	AllScriptsBtn.MouseLeave:Connect(function()
-		tween(AllScriptsBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
-		tween(AllScriptsStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.15 })
-		tween(AllScriptsArrow, TWEEN_FAST, { ImageColor3 = THEME.TextSecondary })
+		tween(AllScriptsBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#181B1E") })
+		tween(AllScriptsStroke, TWEEN_FAST, { Color = Color3.fromHex("#2A2E33"), Transparency = 0.1 })
+		tween(AllScriptsArrow, TWEEN_FAST, { ImageColor3 = THEME.TextSecondary, Position = UDim2.new(1, -10, 0.5, 0) })
 	end)
 
 	-- Dedicated "All Scripts" Hub View (Opened when clicking All Scripts in Home Tab)
