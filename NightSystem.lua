@@ -25,6 +25,8 @@ local UserInputService = game:GetService("UserInputService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
+local HttpService = game:GetService("HttpService")
+local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
@@ -385,10 +387,7 @@ function NightSystem:CreateWindow(config: {
 	local windowTitle = tostring(cfg.Title or "Night System")
 	local windowSubtitle = tostring(cfg.Subtitle or "discord.gg/4cZBCyDFmX")
 	local logoId = tostring(cfg.LogoId or ASSETS.DefaultLogo)
-	local introText = tostring(
-		cfg.IntroText
-			or "Autorob is free for a few days so you can test it! Enjoy it and let us know what you think. Join discord.gg/4cZBCyDFmX for news, updates and support."
-	)
+	local introText = tostring(cfg.IntroText or "Night System Scripts in all free")
 	local mainTabName = tostring(cfg.MainTabName or "Main")
 	local autoSort = if cfg.AutoSort ~= nil then cfg.AutoSort else true
 	local toggleKey = cfg.ToggleKey or Enum.KeyCode.LeftControl
@@ -788,13 +787,53 @@ function NightSystem:CreateWindow(config: {
 		tween(ExtIcon, TWEEN_FAST, { ImageColor3 = THEME.TextSecondary })
 	end)
 	CopyDiscordBtn.MouseButton1Click:Connect(function()
-		local clip = (getfenv() :: any).setclipboard or (getfenv() :: any).toclipboard
+		local inviteUrl = "https://discord.gg/4cZBCyDFmX"
+		local inviteCode = "4cZBCyDFmX"
+		local env = getfenv() :: any
+
+		-- 1. Open Browser Tab if supported by Executor / Environment
+		pcall(function()
+			local openBrowserFn = env.openurl or env.browseurl or env.OpenBrowserWindow
+			if type(openBrowserFn) == "function" then
+				openBrowserFn(inviteUrl)
+			elseif type(os) == "table" and type((os :: any).execute) == "function" then
+				(os :: any).execute('start "" "' .. inviteUrl .. '"')
+			else
+				GuiService:OpenBrowserWindow(inviteUrl)
+			end
+		end)
+
+		-- 2. Trigger Discord Desktop App Join Prompt via local RPC
+		task.spawn(function()
+			local reqFn = env.request or env.http_request or (type(env.syn) == "table" and env.syn.request) or (type(env.http) == "table" and env.http.request)
+			if type(reqFn) == "function" then
+				pcall(function()
+					reqFn({
+						Url = "http://127.0.0.1:6463/rpc?v=1",
+						Method = "POST",
+						Headers = {
+							["Content-Type"] = "application/json",
+							["Origin"] = "https://discord.com",
+						},
+						Body = HttpService:JSONEncode({
+							cmd = "INVITE_BROWSER",
+							args = { code = inviteCode },
+							nonce = HttpService:GenerateGUID(false),
+						}),
+					})
+				end)
+			end
+		end)
+
+		-- 3. Also copy invite link to clipboard as fallback
+		local clip = env.setclipboard or env.toclipboard
 		if type(clip) == "function" then
-			pcall(clip, "https://discord.gg/4cZBCyDFmX")
+			pcall(clip, inviteUrl)
 		end
+
 		NightSystem:Notify({
 			Title = windowTitle,
-			Content = "Discord-Link kopiert! (https://discord.gg/4cZBCyDFmX)",
+			Content = "Discord-Einladung geöffnet! (" .. inviteUrl .. ")",
 			Duration = 3,
 		})
 	end)
@@ -1321,10 +1360,10 @@ function NightSystem:CreateWindow(config: {
 	InfoTextLabel.LineHeight = 1.25
 	InfoTextLabel.Parent = HomePage
 
-	-- Bottom Game Statistics (Place ID & Your Team separated by 1px #262626 lines)
+	-- Bottom Game Statistics (Place ID, Your Team & Executor separated by 1px #262626 lines)
 	local StatsContainer = Instance.new("Frame")
 	StatsContainer.Name = "StatsContainer"
-	StatsContainer.Size = UDim2.new(1, 0, 0, 82)
+	StatsContainer.Size = UDim2.new(1, 0, 0, 111)
 	StatsContainer.Position = UDim2.new(0, 0, 1, 0)
 	StatsContainer.AnchorPoint = Vector2.new(0, 1)
 	StatsContainer.BackgroundTransparency = 1
@@ -1339,7 +1378,7 @@ function NightSystem:CreateWindow(config: {
 	TopStatsDivider.Parent = StatsContainer
 
 	local PlaceIdRow = Instance.new("Frame")
-	PlaceIdRow.Size = UDim2.new(1, 0, 0, 40)
+	PlaceIdRow.Size = UDim2.new(1, 0, 0, 36)
 	PlaceIdRow.Position = UDim2.new(0, 0, 0, 1)
 	PlaceIdRow.BackgroundTransparency = 1
 	PlaceIdRow.Parent = StatsContainer
@@ -1368,15 +1407,15 @@ function NightSystem:CreateWindow(config: {
 
 	local MiddleStatsDivider = Instance.new("Frame")
 	MiddleStatsDivider.Size = UDim2.new(1, 0, 0, 1)
-	MiddleStatsDivider.Position = UDim2.new(0, 0, 0, 41)
+	MiddleStatsDivider.Position = UDim2.new(0, 0, 0, 37)
 	MiddleStatsDivider.BackgroundColor3 = THEME.Stroke
 	MiddleStatsDivider.BackgroundTransparency = 0.2
 	MiddleStatsDivider.BorderSizePixel = 0
 	MiddleStatsDivider.Parent = StatsContainer
 
 	local TeamRow = Instance.new("Frame")
-	TeamRow.Size = UDim2.new(1, 0, 0, 40)
-	TeamRow.Position = UDim2.new(0, 0, 0, 42)
+	TeamRow.Size = UDim2.new(1, 0, 0, 36)
+	TeamRow.Position = UDim2.new(0, 0, 0, 38)
 	TeamRow.BackgroundTransparency = 1
 	TeamRow.Parent = StatsContainer
 
@@ -1400,6 +1439,60 @@ function NightSystem:CreateWindow(config: {
 	TeamValue.TextSize = 13
 	TeamValue.TextXAlignment = Enum.TextXAlignment.Right
 	TeamValue.Parent = TeamRow
+
+	local BottomStatsDivider = Instance.new("Frame")
+	BottomStatsDivider.Size = UDim2.new(1, 0, 0, 1)
+	BottomStatsDivider.Position = UDim2.new(0, 0, 0, 74)
+	BottomStatsDivider.BackgroundColor3 = THEME.Stroke
+	BottomStatsDivider.BackgroundTransparency = 0.2
+	BottomStatsDivider.BorderSizePixel = 0
+	BottomStatsDivider.Parent = StatsContainer
+
+	local ExecutorRow = Instance.new("Frame")
+	ExecutorRow.Size = UDim2.new(1, 0, 0, 36)
+	ExecutorRow.Position = UDim2.new(0, 0, 0, 75)
+	ExecutorRow.BackgroundTransparency = 1
+	ExecutorRow.Parent = StatsContainer
+
+	local ExecutorLabel = Instance.new("TextLabel")
+	ExecutorLabel.Size = UDim2.new(0.35, 0, 1, 0)
+	ExecutorLabel.BackgroundTransparency = 1
+	ExecutorLabel.Font = Enum.Font.GothamMedium
+	ExecutorLabel.Text = "Executor"
+	ExecutorLabel.TextColor3 = THEME.TextSecondary
+	ExecutorLabel.TextSize = 13
+	ExecutorLabel.TextXAlignment = Enum.TextXAlignment.Left
+	ExecutorLabel.Parent = ExecutorRow
+
+	local function detectExecutorName(): string
+		local env = getfenv() :: any
+		local identifyFn = env.identifyexecutor or env.getexecutorname
+		if type(identifyFn) == "function" then
+			local ok, name, ver = pcall(identifyFn)
+			if ok and name and tostring(name) ~= "" then
+				if ver and tostring(ver) ~= "" then
+					return tostring(name) .. " " .. tostring(ver)
+				end
+				return tostring(name)
+			end
+		end
+		if RunService:IsStudio() then
+			return "Roblox Studio"
+		end
+		return "Unknown Executor"
+	end
+
+	local ExecutorValue = Instance.new("TextLabel")
+	ExecutorValue.Size = UDim2.new(0.65, 0, 1, 0)
+	ExecutorValue.Position = UDim2.new(0.35, 0, 0, 0)
+	ExecutorValue.BackgroundTransparency = 1
+	ExecutorValue.Font = Enum.Font.GothamMedium
+	ExecutorValue.Text = detectExecutorName()
+	ExecutorValue.TextColor3 = THEME.TextStatValue
+	ExecutorValue.TextSize = 13
+	ExecutorValue.TextXAlignment = Enum.TextXAlignment.Right
+	ExecutorValue.TextTruncate = Enum.TextTruncate.AtEnd
+	ExecutorValue.Parent = ExecutorRow
 
 	-- Load Avatars & Game Metadata asynchronously
 	task.spawn(function()
