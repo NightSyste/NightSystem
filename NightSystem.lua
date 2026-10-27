@@ -1360,7 +1360,7 @@ function NightSystem:CreateWindow(config: {
 	InfoTextLabel.LineHeight = 1.25
 	InfoTextLabel.Parent = HomePage
 
-	-- Bottom Game Statistics (Place ID, Your Team & Executor separated by 1px #262626 lines)
+	-- Bottom Game Statistics (Executor, Place ID & Your Team separated by 1px #262626 lines)
 	local StatsContainer = Instance.new("Frame")
 	StatsContainer.Name = "StatsContainer"
 	StatsContainer.Size = UDim2.new(1, 0, 0, 111)
@@ -1377,80 +1377,9 @@ function NightSystem:CreateWindow(config: {
 	TopStatsDivider.BorderSizePixel = 0
 	TopStatsDivider.Parent = StatsContainer
 
-	local PlaceIdRow = Instance.new("Frame")
-	PlaceIdRow.Size = UDim2.new(1, 0, 0, 36)
-	PlaceIdRow.Position = UDim2.new(0, 0, 0, 1)
-	PlaceIdRow.BackgroundTransparency = 1
-	PlaceIdRow.Parent = StatsContainer
-
-	local PlaceIdLabel = Instance.new("TextLabel")
-	PlaceIdLabel.Size = UDim2.new(0.35, 0, 1, 0)
-	PlaceIdLabel.BackgroundTransparency = 1
-	PlaceIdLabel.Font = Enum.Font.GothamMedium
-	PlaceIdLabel.Text = "Place ID"
-	PlaceIdLabel.TextColor3 = THEME.TextSecondary
-	PlaceIdLabel.TextSize = 13
-	PlaceIdLabel.TextXAlignment = Enum.TextXAlignment.Left
-	PlaceIdLabel.Parent = PlaceIdRow
-
-	local PlaceIdValue = Instance.new("TextLabel")
-	PlaceIdValue.Size = UDim2.new(0.65, 0, 1, 0)
-	PlaceIdValue.Position = UDim2.new(0.35, 0, 0, 0)
-	PlaceIdValue.BackgroundTransparency = 1
-	PlaceIdValue.Font = Enum.Font.GothamMedium
-	PlaceIdValue.Text = "7711635737 - Notruf Hamburg"
-	PlaceIdValue.TextColor3 = THEME.TextStatValue
-	PlaceIdValue.TextSize = 13
-	PlaceIdValue.TextXAlignment = Enum.TextXAlignment.Right
-	PlaceIdValue.TextTruncate = Enum.TextTruncate.AtEnd
-	PlaceIdValue.Parent = PlaceIdRow
-
-	local MiddleStatsDivider = Instance.new("Frame")
-	MiddleStatsDivider.Size = UDim2.new(1, 0, 0, 1)
-	MiddleStatsDivider.Position = UDim2.new(0, 0, 0, 37)
-	MiddleStatsDivider.BackgroundColor3 = THEME.Stroke
-	MiddleStatsDivider.BackgroundTransparency = 0.2
-	MiddleStatsDivider.BorderSizePixel = 0
-	MiddleStatsDivider.Parent = StatsContainer
-
-	local TeamRow = Instance.new("Frame")
-	TeamRow.Size = UDim2.new(1, 0, 0, 36)
-	TeamRow.Position = UDim2.new(0, 0, 0, 38)
-	TeamRow.BackgroundTransparency = 1
-	TeamRow.Parent = StatsContainer
-
-	local TeamLabel = Instance.new("TextLabel")
-	TeamLabel.Size = UDim2.new(0.35, 0, 1, 0)
-	TeamLabel.BackgroundTransparency = 1
-	TeamLabel.Font = Enum.Font.GothamMedium
-	TeamLabel.Text = "Your Team"
-	TeamLabel.TextColor3 = THEME.TextSecondary
-	TeamLabel.TextSize = 13
-	TeamLabel.TextXAlignment = Enum.TextXAlignment.Left
-	TeamLabel.Parent = TeamRow
-
-	local TeamValue = Instance.new("TextLabel")
-	TeamValue.Size = UDim2.new(0.65, 0, 1, 0)
-	TeamValue.Position = UDim2.new(0.35, 0, 0, 0)
-	TeamValue.BackgroundTransparency = 1
-	TeamValue.Font = Enum.Font.GothamMedium
-	TeamValue.Text = if LocalPlayer.Team then LocalPlayer.Team.Name else "Citizen"
-	TeamValue.TextColor3 = THEME.TextStatValue
-	TeamValue.TextSize = 13
-	TeamValue.TextXAlignment = Enum.TextXAlignment.Right
-	TeamValue.Parent = TeamRow
-
-	local BottomStatsDivider = Instance.new("Frame")
-	BottomStatsDivider.Size = UDim2.new(1, 0, 0, 1)
-	BottomStatsDivider.Position = UDim2.new(0, 0, 0, 74)
-	BottomStatsDivider.BackgroundColor3 = THEME.Stroke
-	BottomStatsDivider.BackgroundTransparency = 0.2
-	BottomStatsDivider.BorderSizePixel = 0
-	BottomStatsDivider.Parent = StatsContainer
-
 	local ExecutorRow = Instance.new("Frame")
 	ExecutorRow.Size = UDim2.new(1, 0, 0, 36)
-	ExecutorRow.Position = UDim2.new(0, 0, 0, 75)
+	ExecutorRow.Position = UDim2.new(0, 0, 0, 1)
 	ExecutorRow.BackgroundTransparency = 1
 	ExecutorRow.Parent = StatsContainer
 
@@ -1493,6 +1422,77 @@ function NightSystem:CreateWindow(config: {
 	ExecutorValue.TextXAlignment = Enum.TextXAlignment.Right
 	ExecutorValue.TextTruncate = Enum.TextTruncate.AtEnd
 	ExecutorValue.Parent = ExecutorRow
+
+	local MiddleStatsDivider = Instance.new("Frame")
+	MiddleStatsDivider.Size = UDim2.new(1, 0, 0, 1)
+	MiddleStatsDivider.Position = UDim2.new(0, 0, 0, 37)
+	MiddleStatsDivider.BackgroundColor3 = THEME.Stroke
+	MiddleStatsDivider.BackgroundTransparency = 0.2
+	MiddleStatsDivider.BorderSizePixel = 0
+	MiddleStatsDivider.Parent = StatsContainer
+
+	local PlaceIdRow = Instance.new("Frame")
+	PlaceIdRow.Size = UDim2.new(1, 0, 0, 36)
+	PlaceIdRow.Position = UDim2.new(0, 0, 0, 38)
+	PlaceIdRow.BackgroundTransparency = 1
+	PlaceIdRow.Parent = StatsContainer
+
+	local PlaceIdLabel = Instance.new("TextLabel")
+	PlaceIdLabel.Size = UDim2.new(0.35, 0, 1, 0)
+	PlaceIdLabel.BackgroundTransparency = 1
+	PlaceIdLabel.Font = Enum.Font.GothamMedium
+	PlaceIdLabel.Text = "Place ID"
+	PlaceIdLabel.TextColor3 = THEME.TextSecondary
+	PlaceIdLabel.TextSize = 13
+	PlaceIdLabel.TextXAlignment = Enum.TextXAlignment.Left
+	PlaceIdLabel.Parent = PlaceIdRow
+
+	local PlaceIdValue = Instance.new("TextLabel")
+	PlaceIdValue.Size = UDim2.new(0.65, 0, 1, 0)
+	PlaceIdValue.Position = UDim2.new(0.35, 0, 0, 0)
+	PlaceIdValue.BackgroundTransparency = 1
+	PlaceIdValue.Font = Enum.Font.GothamMedium
+	PlaceIdValue.Text = "7711635737 - Notruf Hamburg"
+	PlaceIdValue.TextColor3 = THEME.TextStatValue
+	PlaceIdValue.TextSize = 13
+	PlaceIdValue.TextXAlignment = Enum.TextXAlignment.Right
+	PlaceIdValue.TextTruncate = Enum.TextTruncate.AtEnd
+	PlaceIdValue.Parent = PlaceIdRow
+
+	local BottomStatsDivider = Instance.new("Frame")
+	BottomStatsDivider.Size = UDim2.new(1, 0, 0, 1)
+	BottomStatsDivider.Position = UDim2.new(0, 0, 0, 74)
+	BottomStatsDivider.BackgroundColor3 = THEME.Stroke
+	BottomStatsDivider.BackgroundTransparency = 0.2
+	BottomStatsDivider.BorderSizePixel = 0
+	BottomStatsDivider.Parent = StatsContainer
+
+	local TeamRow = Instance.new("Frame")
+	TeamRow.Size = UDim2.new(1, 0, 0, 36)
+	TeamRow.Position = UDim2.new(0, 0, 0, 75)
+	TeamRow.BackgroundTransparency = 1
+	TeamRow.Parent = StatsContainer
+
+	local TeamLabel = Instance.new("TextLabel")
+	TeamLabel.Size = UDim2.new(0.35, 0, 1, 0)
+	TeamLabel.BackgroundTransparency = 1
+	TeamLabel.Font = Enum.Font.GothamMedium
+	TeamLabel.Text = "Your Team"
+	TeamLabel.TextColor3 = THEME.TextSecondary
+	TeamLabel.TextSize = 13
+	TeamLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TeamLabel.Parent = TeamRow
+
+	local TeamValue = Instance.new("TextLabel")
+	TeamValue.Size = UDim2.new(0.65, 0, 1, 0)
+	TeamValue.Position = UDim2.new(0.35, 0, 0, 0)
+	TeamValue.BackgroundTransparency = 1
+	TeamValue.Font = Enum.Font.GothamMedium
+	TeamValue.Text = if LocalPlayer.Team then LocalPlayer.Team.Name else "Citizen"
+	TeamValue.TextColor3 = THEME.TextStatValue
+	TeamValue.TextSize = 13
+	TeamValue.TextXAlignment = Enum.TextXAlignment.Right
+	TeamValue.Parent = TeamRow
 
 	-- Load Avatars & Game Metadata asynchronously
 	task.spawn(function()
