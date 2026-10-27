@@ -476,6 +476,7 @@ function NightSystem:CreateWindow(config: {
 	MainFrame.BackgroundColor3 = THEME.MainBackground
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
+	MainFrame.Visible = false
 	MainFrame.Parent = ScreenGui
 	createCorner(MainFrame, 12)
 	createStroke(MainFrame, THEME.Stroke, 1, 0.2)
@@ -4042,6 +4043,163 @@ function NightSystem:CreateWindow(config: {
 			ScreenGui:Destroy()
 		end
 	end
+
+	-- ========================================================================
+	-- STARTUP LOADER (Kompakter Loader mit Ladebalken & Roblox-Avatar)
+	-- ========================================================================
+	task.spawn(function()
+		local LoaderFrame = Instance.new("Frame")
+		LoaderFrame.Name = "StartupLoader"
+		LoaderFrame.Size = UDim2.new(0, 360, 0, 100)
+		LoaderFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+		LoaderFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+		LoaderFrame.BackgroundColor3 = Color3.fromHex("#121417")
+		LoaderFrame.BorderSizePixel = 0
+		LoaderFrame.ClipsDescendants = true
+		LoaderFrame.Parent = ScreenGui
+		createCorner(LoaderFrame, 12)
+		local loaderStroke = createStroke(LoaderFrame, Color3.fromHex("#26292E"), 1, 0.15)
+
+		-- Avatar Frame auf der linken Seite
+		local avatarHolder = Instance.new("Frame")
+		avatarHolder.Size = UDim2.new(0, 56, 0, 56)
+		avatarHolder.Position = UDim2.new(0, 16, 0.5, 0)
+		avatarHolder.AnchorPoint = Vector2.new(0, 0.5)
+		avatarHolder.BackgroundColor3 = Color3.fromHex("#181A1D")
+		avatarHolder.BorderSizePixel = 0
+		avatarHolder.Parent = LoaderFrame
+		createCorner(avatarHolder, 28)
+		createStroke(avatarHolder, Color3.fromHex("#2F333A"), 1, 0.2)
+
+		local avatarImg = Instance.new("ImageLabel")
+		avatarImg.Size = UDim2.new(1, 0, 1, 0)
+		avatarImg.BackgroundTransparency = 1
+		avatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(LocalPlayer.UserId) .. "&w=150&h=150"
+		avatarImg.Parent = avatarHolder
+		createCorner(avatarImg, 28)
+
+		task.spawn(function()
+			local ok, thumb = pcall(function()
+				return Players:GetUserThumbnailAsync(
+					LocalPlayer.UserId,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size150x150
+				)
+			end)
+			if ok and thumb and avatarImg.Parent then
+				avatarImg.Image = thumb
+			end
+		end)
+
+		-- Rechte Seite: Titel, Prozent & Status
+		local titleLbl = Instance.new("TextLabel")
+		titleLbl.Size = UDim2.new(1, -150, 0, 18)
+		titleLbl.Position = UDim2.new(0, 84, 0, 18)
+		titleLbl.BackgroundTransparency = 1
+		titleLbl.Font = Enum.Font.GothamBold
+		titleLbl.Text = "Night System"
+		titleLbl.TextColor3 = THEME.TextPrimary
+		titleLbl.TextSize = 15
+		titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+		titleLbl.Parent = LoaderFrame
+
+		local percentLbl = Instance.new("TextLabel")
+		percentLbl.Size = UDim2.new(0, 50, 0, 16)
+		percentLbl.Position = UDim2.new(1, -18, 0, 19)
+		percentLbl.AnchorPoint = Vector2.new(1, 0)
+		percentLbl.BackgroundTransparency = 1
+		percentLbl.Font = Enum.Font.GothamBold
+		percentLbl.Text = "0%"
+		percentLbl.TextColor3 = THEME.TextSecondary
+		percentLbl.TextSize = 12
+		percentLbl.TextXAlignment = Enum.TextXAlignment.Right
+		percentLbl.Parent = LoaderFrame
+
+		local statusLbl = Instance.new("TextLabel")
+		statusLbl.Size = UDim2.new(1, -150, 0, 14)
+		statusLbl.Position = UDim2.new(0, 84, 0, 38)
+		statusLbl.BackgroundTransparency = 1
+		statusLbl.Font = Enum.Font.GothamMedium
+		statusLbl.Text = "Loading scripts..."
+		statusLbl.TextColor3 = THEME.TextSecondary
+		statusLbl.TextSize = 11
+		statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+		statusLbl.TextTruncate = Enum.TextTruncate.AtEnd
+		statusLbl.Parent = LoaderFrame
+
+		-- Progress Bar Track & Fill
+		local barTrack = Instance.new("Frame")
+		barTrack.Size = UDim2.new(1, -100, 0, 6)
+		barTrack.Position = UDim2.new(0, 84, 0, 62)
+		barTrack.BackgroundColor3 = Color3.fromHex("#1A1D22")
+		barTrack.BorderSizePixel = 0
+		barTrack.Parent = LoaderFrame
+		createCorner(barTrack, 3)
+
+		local barFill = Instance.new("Frame")
+		barFill.Size = UDim2.new(0, 0, 1, 0)
+		barFill.BackgroundColor3 = THEME.Accent
+		barFill.BorderSizePixel = 0
+		barFill.Parent = barTrack
+		createCorner(barFill, 3)
+
+		-- Sanfter Einblend-Effekt für den Loader
+		LoaderFrame.Size = UDim2.new(0, 330, 0, 92)
+		tween(LoaderFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, 360, 0, 100),
+		})
+
+		-- Authentischer Ladevorgang (Balken füllt sich von 0% auf 100%)
+		local stages = {
+			{ p = 0.28, text = "Checking Executor...", dur = 0.35 },
+			{ p = 0.64, text = "Loading Night System Scripts...", dur = 0.45 },
+			{ p = 0.92, text = "Preparing UI...", dur = 0.35 },
+			{ p = 1.00, text = "Ready!", dur = 0.25 },
+		}
+
+		for _, st in ipairs(stages) do
+			statusLbl.Text = st.text
+			tween(barFill, TweenInfo.new(st.dur, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = UDim2.new(st.p, 0, 1, 0),
+			})
+			local startP = tonumber(string.match(percentLbl.Text, "%d+")) or 0
+			local endP = math.round(st.p * 100)
+			local steps = 10
+			for s = 1, steps do
+				task.wait(st.dur / steps)
+				local cur = math.round(startP + (endP - startP) * (s / steps))
+				percentLbl.Text = tostring(cur) .. "%"
+			end
+		end
+
+		task.wait(0.18)
+
+		-- Loader sanft ausfaden
+		tween(LoaderFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Size = UDim2.new(0, 380, 0, 106),
+			BackgroundTransparency = 1,
+		})
+		tween(loaderStroke, TWEEN_FAST, { Transparency = 1 })
+		tween(avatarHolder, TWEEN_FAST, { BackgroundTransparency = 1 })
+		tween(avatarImg, TWEEN_FAST, { ImageTransparency = 1 })
+		tween(titleLbl, TWEEN_FAST, { TextTransparency = 1 })
+		tween(statusLbl, TWEEN_FAST, { TextTransparency = 1 })
+		tween(percentLbl, TWEEN_FAST, { TextTransparency = 1 })
+		tween(barTrack, TWEEN_FAST, { BackgroundTransparency = 1 })
+		tween(barFill, TWEEN_FAST, { BackgroundTransparency = 1 })
+
+		task.wait(0.26)
+		LoaderFrame:Destroy()
+
+		-- Night System Haupt-UI einblenden
+		MainFrame.Visible = true
+		MainFrame.Size = UDim2.new(0, normalSize.X.Offset * 0.92, 0, normalSize.Y.Offset * 0.92)
+		MainFrame.BackgroundTransparency = 0.4
+		tween(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = normalSize,
+			BackgroundTransparency = 0,
+		})
+	end)
 
 	local winInstance = setmetatable(Window, Window)
 	NightSystem._ActiveWindow = winInstance
