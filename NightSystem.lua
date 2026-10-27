@@ -752,88 +752,113 @@ function NightSystem:CreateWindow(config: {
 	BrandTitle.Parent = DiscordBox
 
 	local BrandSub = Instance.new("TextLabel")
-	BrandSub.Size = UDim2.new(1, -80, 0, 14)
+	BrandSub.Size = UDim2.new(1, -74, 0, 14)
 	BrandSub.Position = UDim2.new(0, 53, 0, 28)
 	BrandSub.BackgroundTransparency = 1
 	BrandSub.Font = Enum.Font.GothamMedium
 	BrandSub.Text = windowSubtitle
 	BrandSub.TextColor3 = THEME.TextSecondary
-	BrandSub.TextSize = 11
+	BrandSub.TextSize = 10
 	BrandSub.TextXAlignment = Enum.TextXAlignment.Left
 	BrandSub.TextTruncate = Enum.TextTruncate.AtEnd
 	BrandSub.Parent = DiscordBox
 
-	local CopyDiscordBtn = Instance.new("TextButton")
-	CopyDiscordBtn.Size = UDim2.new(0, 22, 0, 22)
-	CopyDiscordBtn.Position = UDim2.new(1, -8, 0.5, 0)
-	CopyDiscordBtn.AnchorPoint = Vector2.new(1, 0.5)
-	CopyDiscordBtn.BackgroundTransparency = 1
-	CopyDiscordBtn.Text = ""
-	CopyDiscordBtn.Parent = DiscordBox
-
 	local ExtIcon = Instance.new("ImageLabel")
 	ExtIcon.Size = UDim2.new(0, 14, 0, 14)
-	ExtIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-	ExtIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	ExtIcon.Position = UDim2.new(1, -12, 0.5, 0)
+	ExtIcon.AnchorPoint = Vector2.new(1, 0.5)
 	ExtIcon.BackgroundTransparency = 1
 	ExtIcon.Image = ASSETS.ExternalLink
 	ExtIcon.ImageColor3 = THEME.TextSecondary
-	ExtIcon.Parent = CopyDiscordBtn
+	ExtIcon.Parent = DiscordBox
+
+	-- Full-box clickable button so clicking anywhere on the Discord card/link opens it
+	local CopyDiscordBtn = Instance.new("TextButton")
+	CopyDiscordBtn.Name = "DiscordCardButton"
+	CopyDiscordBtn.Size = UDim2.new(1, 0, 1, 0)
+	CopyDiscordBtn.Position = UDim2.new(0, 0, 0, 0)
+	CopyDiscordBtn.BackgroundTransparency = 1
+	CopyDiscordBtn.Text = ""
+	CopyDiscordBtn.ZIndex = 5
+	CopyDiscordBtn.Parent = DiscordBox
 
 	CopyDiscordBtn.MouseEnter:Connect(function()
+		tween(DiscordBox, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
+		tween(BrandSub, TWEEN_FAST, { TextColor3 = THEME.TextPrimary })
 		tween(ExtIcon, TWEEN_FAST, { ImageColor3 = THEME.TextPrimary })
 	end)
 	CopyDiscordBtn.MouseLeave:Connect(function()
+		tween(DiscordBox, TWEEN_FAST, { BackgroundColor3 = THEME.DiscordBoxBg })
+		tween(BrandSub, TWEEN_FAST, { TextColor3 = THEME.TextSecondary })
 		tween(ExtIcon, TWEEN_FAST, { ImageColor3 = THEME.TextSecondary })
 	end)
 	CopyDiscordBtn.MouseButton1Click:Connect(function()
 		local inviteUrl = "https://discord.gg/4cZBCyDFmX"
 		local inviteCode = "4cZBCyDFmX"
-		local env = getfenv() :: any
+		local fenv = getfenv() :: any
+		local genv = (type(fenv.getgenv) == "function" and fenv.getgenv()) or _G or fenv
 
-		-- 1. Open Browser Tab if supported by Executor / Environment
-		pcall(function()
-			local openBrowserFn = env.openurl or env.browseurl or env.OpenBrowserWindow
-			if type(openBrowserFn) == "function" then
-				openBrowserFn(inviteUrl)
-			elseif type(os) == "table" and type((os :: any).execute) == "function" then
-				(os :: any).execute('start "" "' .. inviteUrl .. '"')
-			else
-				GuiService:OpenBrowserWindow(inviteUrl)
-			end
-		end)
-
-		-- 2. Trigger Discord Desktop App Join Prompt via local RPC
+		-- 1. Try all Executor & Engine Browser-Opening APIs
 		task.spawn(function()
-			local reqFn = env.request or env.http_request or (type(env.syn) == "table" and env.syn.request) or (type(env.http) == "table" and env.http.request)
+			local openFn = genv.openurl
+				or genv.OpenUrl
+				or genv.browseurl
+				or genv.BrowseUrl
+				or genv.OpenBrowserWindow
+				or fenv.openurl
+				or fenv.browseurl
+			if type(openFn) == "function" then
+				pcall(openFn, inviteUrl)
+			end
+			pcall(function()
+				game:GetService("LinkingService"):OpenUrl(inviteUrl)
+			end)
+			pcall(function()
+				game:GetService("BrowserService"):OpenBrowserWindow(inviteUrl)
+			end)
+			pcall(function()
+				GuiService:OpenBrowserWindow(inviteUrl)
+			end)
+		end)
+
+		-- 2. Trigger Discord App Invite Modal via local RPC (ports 6463-6465)
+		task.spawn(function()
+			local reqFn = genv.request
+				or genv.http_request
+				or (type(genv.syn) == "table" and genv.syn.request)
+				or (type(genv.http) == "table" and genv.http.request)
+				or fenv.request
+				or fenv.http_request
 			if type(reqFn) == "function" then
-				pcall(function()
-					reqFn({
-						Url = "http://127.0.0.1:6463/rpc?v=1",
-						Method = "POST",
-						Headers = {
-							["Content-Type"] = "application/json",
-							["Origin"] = "https://discord.com",
-						},
-						Body = HttpService:JSONEncode({
-							cmd = "INVITE_BROWSER",
-							args = { code = inviteCode },
-							nonce = HttpService:GenerateGUID(false),
-						}),
-					})
-				end)
+				for port = 6463, 6465 do
+					pcall(function()
+						reqFn({
+							Url = "http://127.0.0.1:" .. tostring(port) .. "/rpc?v=1",
+							Method = "POST",
+							Headers = {
+								["Content-Type"] = "application/json",
+								["Origin"] = "https://discord.com",
+							},
+							Body = HttpService:JSONEncode({
+								cmd = "INVITE_BROWSER",
+								args = { code = inviteCode },
+								nonce = HttpService:GenerateGUID(false),
+							}),
+						})
+					end)
+				end
 			end
 		end)
 
-		-- 3. Also copy invite link to clipboard as fallback
-		local clip = env.setclipboard or env.toclipboard
+		-- 3. Copy invite link to clipboard
+		local clip = genv.setclipboard or genv.toclipboard or fenv.setclipboard or fenv.toclipboard
 		if type(clip) == "function" then
 			pcall(clip, inviteUrl)
 		end
 
 		NightSystem:Notify({
 			Title = windowTitle,
-			Content = "Discord-Einladung geöffnet! (" .. inviteUrl .. ")",
+			Content = "Discord geöffnet & Link kopiert! (" .. inviteUrl .. ")",
 			Duration = 3,
 		})
 	end)
