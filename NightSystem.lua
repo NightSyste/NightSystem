@@ -4159,12 +4159,16 @@ function NightSystem:CreateWindow(config: {
 			Size = UDim2.new(0, 310, 0, 78),
 		})
 
-		-- Dynamische Status-Phasen während des Drehens
-		task.wait(0.45)
-		if statusLbl.Parent then statusLbl.Text = "Checking scripts..." end
-		task.wait(0.55)
+		-- Dynamische Status-Phasen während des Drehens (ca. 5 Sekunden Gesamtdauer)
+		task.wait(1.2)
+		if statusLbl.Parent then statusLbl.Text = "Checking executor..." end
+		task.wait(1.4)
+		if statusLbl.Parent then statusLbl.Text = "Loading Night System Scripts..." end
+		task.wait(1.3)
+		if statusLbl.Parent then statusLbl.Text = "Preparing UI & assets..." end
+		task.wait(0.9)
 		if statusLbl.Parent then statusLbl.Text = "Ready!" end
-		task.wait(0.35)
+		task.wait(0.2)
 
 		-- Loader sanft ausblenden
 		isSpinning = false
