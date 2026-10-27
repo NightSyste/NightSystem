@@ -391,7 +391,7 @@ function NightSystem:CreateWindow(config: {
 	)
 	local mainTabName = tostring(cfg.MainTabName or "Main")
 	local autoSort = if cfg.AutoSort ~= nil then cfg.AutoSort else true
-	local toggleKey = cfg.ToggleKey or Enum.KeyCode.RightShift
+	local toggleKey = cfg.ToggleKey or Enum.KeyCode.LeftControl
 
 	-- Clean up old instances
 	disconnectAll()
@@ -652,17 +652,23 @@ function NightSystem:CreateWindow(config: {
 	end
 
 	CloseBtn.MouseButton1Click:Connect(function()
-		disconnectAll()
-		NightSystem._ActiveWindow = nil
+		isMinimized = false
+		isHidden = true
+		FloatingBadge.Visible = false
 		local fadeOut = tween(MainFrame, TWEEN_MEDIUM, {
 			Size = UDim2.new(0, 680, 0, 0),
 			BackgroundTransparency = 1,
 		})
 		fadeOut.Completed:Connect(function()
-			if ScreenGui.Parent then
-				ScreenGui:Destroy()
+			if isHidden then
+				MainFrame.Visible = false
 			end
 		end)
+		NightSystem:Notify({
+			Title = windowTitle,
+			Content = "UI geschlossen – Drücke STRG (Ctrl), um sie wieder zu öffnen.",
+			Duration = 3,
+		})
 	end)
 
 	MaximizeBtn.MouseButton1Click:Connect(function()
@@ -680,8 +686,15 @@ function NightSystem:CreateWindow(config: {
 		setWindowMinimized(false)
 	end)
 
-	trackConnection(UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
-		if not gameProcessed and input.KeyCode == toggleKey then
+	trackConnection(UserInputService.InputBegan:Connect(function(input: InputObject)
+		if UserInputService:GetFocusedTextBox() then
+			return
+		end
+		if
+			input.KeyCode == Enum.KeyCode.LeftControl
+			or input.KeyCode == Enum.KeyCode.RightControl
+			or input.KeyCode == toggleKey
+		then
 			toggleVisibility()
 		end
 	end))
