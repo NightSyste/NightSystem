@@ -1490,7 +1490,7 @@ function NightSystem:CreateWindow(config: {
 	HubHeaderSub.Position = UDim2.new(0, 0, 0, 22)
 	HubHeaderSub.BackgroundTransparency = 1
 	HubHeaderSub.Font = Enum.Font.GothamMedium
-	HubHeaderSub.Text = "Select a script below to execute it immediately"
+	HubHeaderSub.Text = "17 Official Scripts • Click Execute to run or Copy for clipboard"
 	HubHeaderSub.TextColor3 = THEME.TextHeaderSub
 	HubHeaderSub.TextSize = 13
 	HubHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
@@ -1501,7 +1501,7 @@ function NightSystem:CreateWindow(config: {
 	BackToHomeBtn.Size = UDim2.new(0, 118, 0, 32)
 	BackToHomeBtn.Position = UDim2.new(1, 0, 0, 2)
 	BackToHomeBtn.AnchorPoint = Vector2.new(1, 0)
-	BackToHomeBtn.BackgroundColor3 = THEME.CardBackground
+	BackToHomeBtn.BackgroundColor3 = Color3.fromHex("#181B1E")
 	BackToHomeBtn.BorderSizePixel = 0
 	BackToHomeBtn.AutoButtonColor = false
 	BackToHomeBtn.Font = Enum.Font.GothamBold
@@ -1510,21 +1510,65 @@ function NightSystem:CreateWindow(config: {
 	BackToHomeBtn.TextSize = 12
 	BackToHomeBtn.Parent = ScriptsHubPage
 	createCorner(BackToHomeBtn, 8)
-	local BackHomeStroke = createStroke(BackToHomeBtn, THEME.Stroke, 1, 0.15)
+	local BackHomeStroke = createStroke(BackToHomeBtn, Color3.fromHex("#2A2E33"), 1, 0.1)
 
 	BackToHomeBtn.MouseEnter:Connect(function()
-		tween(BackToHomeBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardHover })
-		tween(BackHomeStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.1 })
+		tween(BackToHomeBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#22262B") })
+		tween(BackHomeStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0 })
 	end)
 	BackToHomeBtn.MouseLeave:Connect(function()
-		tween(BackToHomeBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardBackground })
-		tween(BackHomeStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.15 })
+		tween(BackToHomeBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#181B1E") })
+		tween(BackHomeStroke, TWEEN_FAST, { Color = Color3.fromHex("#2A2E33"), Transparency = 0.1 })
+	end)
+
+	-- Search Bar inside All Scripts Hub
+	local HubSearchBar = Instance.new("Frame")
+	HubSearchBar.Name = "HubSearchBar"
+	HubSearchBar.Size = UDim2.new(1, 0, 0, 32)
+	HubSearchBar.Position = UDim2.new(0, 0, 0, 46)
+	HubSearchBar.BackgroundColor3 = THEME.CardBackground
+	HubSearchBar.BorderSizePixel = 0
+	HubSearchBar.Parent = ScriptsHubPage
+	createCorner(HubSearchBar, 8)
+	local HubSearchStroke = createStroke(HubSearchBar, THEME.Stroke, 1, 0.2)
+
+	local HubSearchIcon = Instance.new("ImageLabel")
+	HubSearchIcon.Size = UDim2.new(0, 14, 0, 14)
+	HubSearchIcon.Position = UDim2.new(0, 12, 0.5, 0)
+	HubSearchIcon.AnchorPoint = Vector2.new(0, 0.5)
+	HubSearchIcon.BackgroundTransparency = 1
+	HubSearchIcon.Image = ASSETS.Search
+	HubSearchIcon.ImageColor3 = THEME.TextSecondary
+	HubSearchIcon.Parent = HubSearchBar
+
+	local HubSearchBox = Instance.new("TextBox")
+	HubSearchBox.Name = "HubSearchBox"
+	HubSearchBox.Size = UDim2.new(1, -38, 1, 0)
+	HubSearchBox.Position = UDim2.new(0, 32, 0, 0)
+	HubSearchBox.BackgroundTransparency = 1
+	HubSearchBox.Font = Enum.Font.GothamMedium
+	HubSearchBox.PlaceholderText = "Search 17 Night System scripts (e.g. MM2, Arsenal, MainEH, Build A Boat)..."
+	HubSearchBox.PlaceholderColor3 = THEME.TextSecondary
+	HubSearchBox.Text = ""
+	HubSearchBox.TextColor3 = THEME.TextPrimary
+	HubSearchBox.TextSize = 12
+	HubSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+	HubSearchBox.ClearTextOnFocus = false
+	HubSearchBox.Parent = HubSearchBar
+
+	HubSearchBox.Focused:Connect(function()
+		tween(HubSearchStroke, TWEEN_FAST, { Color = THEME.StrokeActive, Transparency = 0 })
+		tween(HubSearchIcon, TWEEN_FAST, { ImageColor3 = THEME.TextPrimary })
+	end)
+	HubSearchBox.FocusLost:Connect(function()
+		tween(HubSearchStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
+		tween(HubSearchIcon, TWEEN_FAST, { ImageColor3 = THEME.TextSecondary })
 	end)
 
 	local HubScroll = Instance.new("ScrollingFrame")
 	HubScroll.Name = "HubScriptsScroll"
-	HubScroll.Size = UDim2.new(1, 0, 1, -52)
-	HubScroll.Position = UDim2.new(0, 0, 0, 52)
+	HubScroll.Size = UDim2.new(1, 0, 1, -86)
+	HubScroll.Position = UDim2.new(0, 0, 0, 86)
 	HubScroll.BackgroundTransparency = 1
 	HubScroll.BorderSizePixel = 0
 	HubScroll.ScrollBarThickness = 2
@@ -1545,6 +1589,7 @@ function NightSystem:CreateWindow(config: {
 	EmptyHubPlaceholder.Size = UDim2.new(1, 0, 0, 64)
 	EmptyHubPlaceholder.BackgroundColor3 = THEME.CardBackground
 	EmptyHubPlaceholder.BorderSizePixel = 0
+	EmptyHubPlaceholder.Visible = false
 	EmptyHubPlaceholder.Parent = HubScroll
 	createCorner(EmptyHubPlaceholder, 8)
 	createStroke(EmptyHubPlaceholder, THEME.Stroke, 1, 0.2)
@@ -1554,11 +1599,25 @@ function NightSystem:CreateWindow(config: {
 	EmptyHubText.Position = UDim2.new(0, 14, 0, 0)
 	EmptyHubText.BackgroundTransparency = 1
 	EmptyHubText.Font = Enum.Font.GothamMedium
-	EmptyHubText.Text = "Night System Script Hub — Ready for your scripts."
+	EmptyHubText.Text = "No matching scripts found."
 	EmptyHubText.TextColor3 = THEME.TextSecondary
 	EmptyHubText.TextSize = 13
 	EmptyHubText.TextXAlignment = Enum.TextXAlignment.Left
 	EmptyHubText.Parent = EmptyHubPlaceholder
+
+	local hubSearchEntries: { { Card: Frame, Query: string } } = {}
+	HubSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local q = string.lower(string.gsub(HubSearchBox.Text, "^%s*(.-)%s*$", "%1"))
+		local visibleCount = 0
+		for _, item in ipairs(hubSearchEntries) do
+			local match = (q == "") or (string.find(item.Query, q, 1, true) ~= nil)
+			item.Card.Visible = match
+			if match then
+				visibleCount += 1
+			end
+		end
+		EmptyHubPlaceholder.Visible = (#hubSearchEntries > 0 and visibleCount == 0)
+	end)
 
 	AllScriptsBtn.MouseButton1Click:Connect(function()
 		HomePage.Visible = false
@@ -3528,6 +3587,8 @@ function NightSystem:CreateWindow(config: {
 		return divHolder
 	end
 
+	local hubScriptCount = 0
+
 	function Window:AddHubScript(scriptInfo: {
 		Name: string?,
 		Game: string?,
@@ -3537,8 +3598,14 @@ function NightSystem:CreateWindow(config: {
 		Callback: (() -> ())?,
 	})
 		local info = scriptInfo or {}
+		hubScriptCount += 1
 		local sName = tostring(info.Name or "Script")
-		local sDesc = tostring(info.Description or info.Game or "Click to execute this Night System script")
+		local sUrl = tostring(info.Url or "")
+		local rawLoadstring = if type(info.Loadstring) == "string" and info.Loadstring ~= ""
+			then info.Loadstring
+			elseif sUrl ~= "" then 'loadstring(game:HttpGet("' .. sUrl .. '"))()'
+			else ""
+		local sDesc = tostring(info.Description or info.Game or "Night System Official Script • Free")
 
 		if EmptyHubPlaceholder and EmptyHubPlaceholder.Parent then
 			EmptyHubPlaceholder.Visible = false
@@ -3549,13 +3616,34 @@ function NightSystem:CreateWindow(config: {
 		card.Size = UDim2.new(1, 0, 0, 56)
 		card.BackgroundColor3 = THEME.CardBackground
 		card.BorderSizePixel = 0
+		card.LayoutOrder = hubScriptCount
 		card.Parent = HubScroll
 		createCorner(card, 8)
 		local stroke = createStroke(card, THEME.Stroke, 1, 0.2)
 
+		-- Left Numbered Badge
+		local indexBadge = Instance.new("Frame")
+		indexBadge.Size = UDim2.new(0, 32, 0, 32)
+		indexBadge.Position = UDim2.new(0, 12, 0.5, 0)
+		indexBadge.AnchorPoint = Vector2.new(0, 0.5)
+		indexBadge.BackgroundColor3 = Color3.fromHex("#141619")
+		indexBadge.BorderSizePixel = 0
+		indexBadge.Parent = card
+		createCorner(indexBadge, 7)
+		createStroke(indexBadge, Color3.fromHex("#282C32"), 1, 0.2)
+
+		local indexLbl = Instance.new("TextLabel")
+		indexLbl.Size = UDim2.new(1, 0, 1, 0)
+		indexLbl.BackgroundTransparency = 1
+		indexLbl.Font = Enum.Font.GothamBold
+		indexLbl.Text = string.format("%02d", hubScriptCount)
+		indexLbl.TextColor3 = THEME.TextSecondary
+		indexLbl.TextSize = 11
+		indexLbl.Parent = indexBadge
+
 		local titleLbl = Instance.new("TextLabel")
-		titleLbl.Size = UDim2.new(1, -120, 0, 16)
-		titleLbl.Position = UDim2.new(0, 14, 0, 10)
+		titleLbl.Size = UDim2.new(1, -214, 0, 16)
+		titleLbl.Position = UDim2.new(0, 54, 0, 10)
 		titleLbl.BackgroundTransparency = 1
 		titleLbl.Font = Enum.Font.GothamBold
 		titleLbl.Text = sName
@@ -3566,8 +3654,8 @@ function NightSystem:CreateWindow(config: {
 		titleLbl.Parent = card
 
 		local descLbl = Instance.new("TextLabel")
-		descLbl.Size = UDim2.new(1, -120, 0, 14)
-		descLbl.Position = UDim2.new(0, 14, 0, 29)
+		descLbl.Size = UDim2.new(1, -214, 0, 14)
+		descLbl.Position = UDim2.new(0, 54, 0, 29)
 		descLbl.BackgroundTransparency = 1
 		descLbl.Font = Enum.Font.GothamMedium
 		descLbl.Text = sDesc
@@ -3577,8 +3665,61 @@ function NightSystem:CreateWindow(config: {
 		descLbl.TextTruncate = Enum.TextTruncate.AtEnd
 		descLbl.Parent = card
 
+		-- Copy Loadstring Button
+		local copyBtn = Instance.new("TextButton")
+		copyBtn.Name = "CopyButton"
+		copyBtn.Size = UDim2.new(0, 58, 0, 28)
+		copyBtn.Position = UDim2.new(1, -100, 0.5, 0)
+		copyBtn.AnchorPoint = Vector2.new(1, 0.5)
+		copyBtn.BackgroundColor3 = THEME.CardInner
+		copyBtn.BorderSizePixel = 0
+		copyBtn.AutoButtonColor = false
+		copyBtn.Font = Enum.Font.GothamBold
+		copyBtn.Text = "Copy"
+		copyBtn.TextColor3 = THEME.TextSecondary
+		copyBtn.TextSize = 11
+		copyBtn.Parent = card
+		createCorner(copyBtn, 6)
+		local copyStroke = createStroke(copyBtn, THEME.Stroke, 1, 0.2)
+
+		copyBtn.MouseEnter:Connect(function()
+			tween(copyBtn, TWEEN_FAST, { BackgroundColor3 = Color3.fromHex("#202429"), TextColor3 = THEME.TextPrimary })
+			tween(copyStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.2 })
+		end)
+		copyBtn.MouseLeave:Connect(function()
+			tween(copyBtn, TWEEN_FAST, { BackgroundColor3 = THEME.CardInner, TextColor3 = THEME.TextSecondary })
+			tween(copyStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
+		end)
+
+		copyBtn.MouseButton1Click:Connect(function()
+			local gEnv = (type(getgenv) == "function" and getgenv()) or getfenv()
+			local clipFn = gEnv.setclipboard or gEnv.toclipboard or (setclipboard :: any)
+			if type(clipFn) == "function" and rawLoadstring ~= "" then
+				pcall(clipFn, rawLoadstring)
+				copyBtn.Text = "Copied"
+				task.delay(1.2, function()
+					if copyBtn.Parent then
+						copyBtn.Text = "Copy"
+					end
+				end)
+				NightSystem:Notify({
+					Title = "Script Copied",
+					Content = sName .. " loadstring copied to clipboard!",
+					Duration = 2.5,
+				})
+			else
+				NightSystem:Notify({
+					Title = "Night System Hub",
+					Content = rawLoadstring,
+					Duration = 3,
+				})
+			end
+		end)
+
+		-- Execute Script Button
 		local execBtn = Instance.new("TextButton")
-		execBtn.Size = UDim2.new(0, 84, 0, 28)
+		execBtn.Name = "ExecuteButton"
+		execBtn.Size = UDim2.new(0, 78, 0, 28)
 		execBtn.Position = UDim2.new(1, -14, 0.5, 0)
 		execBtn.AnchorPoint = Vector2.new(1, 0.5)
 		execBtn.BackgroundColor3 = THEME.CardInner
@@ -3623,15 +3764,15 @@ function NightSystem:CreateWindow(config: {
 			task.spawn(function()
 				if type(info.Callback) == "function" then
 					safeCallback(info.Callback)
-				elseif type(info.Url) == "string" and info.Url ~= "" then
+				elseif sUrl ~= "" then
 					local ok, fn = pcall(function()
-						return loadstring((game :: any):HttpGet(info.Url))
+						return loadstring((game :: any):HttpGet(sUrl))
 					end)
 					if ok and type(fn) == "function" then
 						pcall(fn)
 					end
-				elseif type(info.Loadstring) == "string" and info.Loadstring ~= "" then
-					local ok, fn = pcall(loadstring, info.Loadstring)
+				elseif rawLoadstring ~= "" then
+					local ok, fn = pcall(loadstring, rawLoadstring)
 					if ok and type(fn) == "function" then
 						pcall(fn)
 					end
@@ -3639,7 +3780,105 @@ function NightSystem:CreateWindow(config: {
 			end)
 		end)
 
+		table.insert(hubSearchEntries, {
+			Card = card,
+			Query = string.lower(sName .. " " .. sDesc .. " " .. sUrl),
+		})
+
 		return card
+	end
+
+	-- Pre-register all 17 Official Night System Scripts in the built-in All Scripts Hub
+	local DEFAULT_HUB_SCRIPTS = {
+		{
+			Name = "Build A Boat For Treasure",
+			Description = "Auto Farm, Build Tools & Treasure Teleport • Build-A-Boat-For-Treasure",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Build-A-Boat-For-Treasure",
+		},
+		{
+			Name = "Fling Things and People",
+			Description = "Super Fling, Anti-Grab & Reach • Fling-Things-and-People",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Fling-Things-and-People",
+		},
+		{
+			Name = "Work at a Pizza Place",
+			Description = "Auto Job, Instant Delivery & Cash Farm • Work-at-a-Pizza-Place",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Work-at-a-Pizza-Place",
+		},
+		{
+			Name = "Murderers VS Sheriffs",
+			Description = "Silent Aim, Hitbox Expander & ESP • MurderVSsheriff",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/MurderVSsheriff",
+		},
+		{
+			Name = "Sniper VS Runner",
+			Description = "Auto Win, Aimbot & Speed • SniperVSrunner",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/SniperVSrunner",
+		},
+		{
+			Name = "Dexter Escape",
+			Description = "Auto Escape, ESP & Teleports • Dexter-Escape",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Dexter-Escape",
+		},
+		{
+			Name = "Water Escape",
+			Description = "Instant Escape, Oxygen & Speed • waterescape",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/waterescape",
+		},
+		{
+			Name = "German Voice",
+			Description = "Voice Chat Utilities, Troll & Movement • GermanVoice",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/GermanVoice",
+		},
+		{
+			Name = "Beach Escape",
+			Description = "Auto Complete, Checkpoints & Fly • BeachEscape",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/BeachEscape",
+		},
+		{
+			Name = "Lucky Blocks Battlegrounds",
+			Description = "Instant Lucky Blocks, All Items & Combat • Luckblock",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Luckblock",
+		},
+		{
+			Name = "Streamer Life",
+			Description = "Infinite Money, Auto Stream & Upgrades • streamer",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/streamer",
+		},
+		{
+			Name = "Bundes RP",
+			Description = "Roleplay Utilities, Vehicle Mods & ESP • bundesRp",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/bundesRp",
+		},
+		{
+			Name = "Flick FPS",
+			Description = "Aimbot, Silent Aim & Wallhack ESP • FlickFPS",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/FlickFPS",
+		},
+		{
+			Name = "Arsenal",
+			Description = "Silent Aim, Kill All, ESP & Gun Mods • Arselnal",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/Arselnal",
+		},
+		{
+			Name = "99 Nights",
+			Description = "Survival ESP, Fullbright & Auto Evade • 99Nights",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/99Nights",
+		},
+		{
+			Name = "Emergency Hamburg (Notruf Hamburg)",
+			Description = "Main Script, Car Fly, ESP & Police Bypass • MainEH",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/MainEH",
+		},
+		{
+			Name = "Murder Mystery 2 (MM2)",
+			Description = "Role ESP, Auto Grab Gun, Coin Farm & Fly • mm2",
+			Url = "https://api.getvortex.vip/api/t/RH5KTH/s/mm2",
+		},
+	}
+
+	for _, sData in ipairs(DEFAULT_HUB_SCRIPTS) do
+		Window:AddHubScript(sData)
 	end
 
 	function Window:SelectTab(tabName: string)
