@@ -1537,13 +1537,13 @@ function NightSystem:CreateWindow(config: {
 
 	local ContentHeader = Instance.new("Frame")
 	ContentHeader.Name = "ContentHeader"
-	ContentHeader.Size = UDim2.new(1, -48, 0, 42)
+	ContentHeader.Size = UDim2.new(1, -48, 0, 28)
 	ContentHeader.Position = UDim2.new(0, 24, 0, 20)
 	ContentHeader.BackgroundTransparency = 1
 	ContentHeader.Parent = MainScriptPage
 
 	local MainPageHeaderTitle = Instance.new("TextLabel")
-	MainPageHeaderTitle.Size = UDim2.new(0.6, 0, 0, 20)
+	MainPageHeaderTitle.Size = UDim2.new(0.6, 0, 1, 0)
 	MainPageHeaderTitle.Position = UDim2.new(0, 0, 0, 0)
 	MainPageHeaderTitle.BackgroundTransparency = 1
 	MainPageHeaderTitle.Font = Enum.Font.GothamBold
@@ -1552,17 +1552,6 @@ function NightSystem:CreateWindow(config: {
 	MainPageHeaderTitle.TextSize = 18
 	MainPageHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
 	MainPageHeaderTitle.Parent = ContentHeader
-
-	local MainPageHeaderSub = Instance.new("TextLabel")
-	MainPageHeaderSub.Size = UDim2.new(0.6, 0, 0, 16)
-	MainPageHeaderSub.Position = UDim2.new(0, 0, 0, 22)
-	MainPageHeaderSub.BackgroundTransparency = 1
-	MainPageHeaderSub.Font = Enum.Font.GothamMedium
-	MainPageHeaderSub.Text = "Welcome back, @" .. LocalPlayer.Name
-	MainPageHeaderSub.TextColor3 = THEME.TextHeaderSub
-	MainPageHeaderSub.TextSize = 13
-	MainPageHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
-	MainPageHeaderSub.Parent = ContentHeader
 
 	local FilterBoxHolder = Instance.new("Frame")
 	FilterBoxHolder.Size = UDim2.new(0, 165, 0, 28)
