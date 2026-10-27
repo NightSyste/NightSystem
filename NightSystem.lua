@@ -882,10 +882,11 @@ function NightSystem:CreateWindow(config: {
 
 	-- ========================================================================
 	-- RIGHT CONTENT CONTAINER (#16181A with #1E2528 / #141517 UIGradient)
+	-- Slightly inset at bottom-right to leave breathing room for the resize handle
 	-- ========================================================================
 	local ContentFrame = Instance.new("Frame")
 	ContentFrame.Name = "ContentContainer"
-	ContentFrame.Size = UDim2.new(1, -224, 1, -54)
+	ContentFrame.Size = UDim2.new(1, -228, 1, -58)
 	ContentFrame.Position = UDim2.new(0, 212, 0, 42)
 	ContentFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	ContentFrame.BorderSizePixel = 0
@@ -902,6 +903,122 @@ function NightSystem:CreateWindow(config: {
 	})
 	ContentGradient.Rotation = -45
 	ContentGradient.Parent = ContentFrame
+
+	-- ========================================================================
+	-- BOTTOM-RIGHT RESIZE HANDLE (Slightly inset, rounded & semi-transparent)
+	-- ========================================================================
+	local ResizeHandle = Instance.new("TextButton")
+	ResizeHandle.Name = "ResizeHandle"
+	ResizeHandle.Size = UDim2.new(0, 22, 0, 22)
+	ResizeHandle.Position = UDim2.new(1, -4, 1, -4)
+	ResizeHandle.AnchorPoint = Vector2.new(1, 1)
+	ResizeHandle.BackgroundColor3 = Color3.fromHex("#2A2E33")
+	ResizeHandle.BackgroundTransparency = 0.65
+	ResizeHandle.BorderSizePixel = 0
+	ResizeHandle.AutoButtonColor = false
+	ResizeHandle.Text = ""
+	ResizeHandle.ZIndex = 25
+	ResizeHandle.Parent = MainFrame
+	createCorner(ResizeHandle, 8)
+	local ResizeStroke = createStroke(ResizeHandle, THEME.TextSecondary, 1, 0.55)
+
+	-- Subtle diagonal grip pills inside the rounded resize handle
+	local GripBar1 = Instance.new("Frame")
+	GripBar1.Size = UDim2.new(0, 10, 0, 2)
+	GripBar1.Position = UDim2.new(0.5, 1, 0.5, 1)
+	GripBar1.AnchorPoint = Vector2.new(0.5, 0.5)
+	GripBar1.Rotation = -45
+	GripBar1.BackgroundColor3 = THEME.TextPrimary
+	GripBar1.BackgroundTransparency = 0.45
+	GripBar1.BorderSizePixel = 0
+	GripBar1.ZIndex = 26
+	GripBar1.Parent = ResizeHandle
+	createCorner(GripBar1, 2)
+
+	local GripBar2 = Instance.new("Frame")
+	GripBar2.Size = UDim2.new(0, 5, 0, 2)
+	GripBar2.Position = UDim2.new(0.5, 4, 0.5, 4)
+	GripBar2.AnchorPoint = Vector2.new(0.5, 0.5)
+	GripBar2.Rotation = -45
+	GripBar2.BackgroundColor3 = THEME.TextPrimary
+	GripBar2.BackgroundTransparency = 0.45
+	GripBar2.BorderSizePixel = 0
+	GripBar2.ZIndex = 26
+	GripBar2.Parent = ResizeHandle
+	createCorner(GripBar2, 2)
+
+	do
+		local isResizing = false
+		local resizeInput: InputObject? = nil
+		local resizeStartMouse = Vector2.zero
+		local startSize = Vector2.zero
+		local startPos = UDim2.new()
+		local minWindowSize = Vector2.new(540, 340)
+		local maxWindowSize = Vector2.new(1200, 820)
+
+		ResizeHandle.MouseEnter:Connect(function()
+			tween(ResizeHandle, TWEEN_FAST, { BackgroundTransparency = 0.35 })
+			tween(ResizeStroke, TWEEN_FAST, { Color = THEME.Accent, Transparency = 0.2 })
+			tween(GripBar1, TWEEN_FAST, { BackgroundTransparency = 0.1 })
+			tween(GripBar2, TWEEN_FAST, { BackgroundTransparency = 0.1 })
+		end)
+
+		ResizeHandle.MouseLeave:Connect(function()
+			if not isResizing then
+				tween(ResizeHandle, TWEEN_FAST, { BackgroundTransparency = 0.65 })
+				tween(ResizeStroke, TWEEN_FAST, { Color = THEME.TextSecondary, Transparency = 0.55 })
+				tween(GripBar1, TWEEN_FAST, { BackgroundTransparency = 0.45 })
+				tween(GripBar2, TWEEN_FAST, { BackgroundTransparency = 0.45 })
+			end
+		end)
+
+		ResizeHandle.InputBegan:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				isResizing = true
+				resizeStartMouse = Vector2.new(input.Position.X, input.Position.Y)
+				startSize = Vector2.new(MainFrame.AbsoluteSize.X, MainFrame.AbsoluteSize.Y)
+				startPos = MainFrame.Position
+
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						isResizing = false
+						normalSize = MainFrame.Size
+						tween(ResizeHandle, TWEEN_FAST, { BackgroundTransparency = 0.65 })
+						tween(ResizeStroke, TWEEN_FAST, { Color = THEME.TextSecondary, Transparency = 0.55 })
+						tween(GripBar1, TWEEN_FAST, { BackgroundTransparency = 0.45 })
+						tween(GripBar2, TWEEN_FAST, { BackgroundTransparency = 0.45 })
+					end
+				end)
+			end
+		end)
+
+		ResizeHandle.InputChanged:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+				resizeInput = input
+			end
+		end)
+
+		trackConnection(UserInputService.InputChanged:Connect(function(input: InputObject)
+			if input == resizeInput and isResizing then
+				local currentMouse = Vector2.new(input.Position.X, input.Position.Y)
+				local delta = currentMouse - resizeStartMouse
+
+				local newW = math.clamp(startSize.X + delta.X, minWindowSize.X, maxWindowSize.X)
+				local newH = math.clamp(startSize.Y + delta.Y, minWindowSize.Y, maxWindowSize.Y)
+				local actualDeltaX = newW - startSize.X
+				local actualDeltaY = newH - startSize.Y
+
+				-- Keep top-left corner anchored while resizing from bottom-right
+				MainFrame.Size = UDim2.new(0, newW, 0, newH)
+				MainFrame.Position = UDim2.new(
+					startPos.X.Scale,
+					startPos.X.Offset + math.round(actualDeltaX * 0.5),
+					startPos.Y.Scale,
+					startPos.Y.Offset + math.round(actualDeltaY * 0.5)
+				)
+			end
+		end))
+	end
 
 	-- ========================================================================
 	-- SIDEBAR TAB ENGINE (Default Built-in Home Tab + Dynamic Script Tab)
