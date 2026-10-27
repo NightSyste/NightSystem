@@ -1532,25 +1532,90 @@ function NightSystem:CreateWindow(config: {
 	VersionValue.TextTruncate = Enum.TextTruncate.AtEnd
 	VersionValue.Parent = VersionRow
 
-	-- Fetch latest live Roblox version from Roblox ClientSettings CDN
+	-- Fetch latest live Roblox version + release date/time ("seit wann die neu ist")
 	task.spawn(function()
-		local ok, rawJson = pcall(function()
-			return (game :: any):HttpGet("https://clientsettingscdn.roblox.com/v2/client-version/WindowsPlayer")
-		end)
-		if ok and type(rawJson) == "string" and #rawJson > 0 then
-			local decodedOk, data = pcall(function()
-				return HttpService:JSONDecode(rawJson)
+		local function formatRelativeTime(unixTs: number): string
+			local diff = math.max(0, os.time() - unixTs)
+			local dateStr = os.date("%d.%m.%Y", unixTs)
+			if diff < 3600 then
+				local mins = math.max(1, math.floor(diff / 60))
+				return string.format("seit %s (vor %d Min.)", dateStr, mins)
+			elseif diff < 86400 then
+				local hours = math.floor(diff / 3600)
+				return string.format("seit %s (vor %d Std.)", dateStr, hours)
+			else
+				local days = math.floor(diff / 86400)
+				return string.format("seit %s (vor %d Tag%s)", dateStr, days, if days == 1 then "" else "en")
+			end
+		end
+
+		local fenv = getfenv() :: any
+		local genv = (type(fenv.getgenv) == "function" and fenv.getgenv()) or _G or fenv
+		local reqFn = genv.request
+			or genv.http_request
+			or (type(genv.syn) == "table" and genv.syn.request)
+			or (type(genv.http) == "table" and genv.http.request)
+			or fenv.request
+			or fenv.http_request
+
+		-- 1. Try WEAO live version endpoint (includes exact Unix timestamp of latest Roblox release)
+		local fetchedWithDate = false
+		if type(reqFn) == "function" then
+			local ok, resp = pcall(function()
+				return reqFn({
+					Url = "https://weao.xyz/api/versions/current",
+					Method = "GET",
+					Headers = { ["User-Agent"] = "WEAO-3PService" },
+				})
 			end)
-			if decodedOk and type(data) == "table" then
-				local verNum = data.version or localClientVersion
-				local uploadHash = data.clientVersionUpload
-				if uploadHash and tostring(uploadHash) ~= "" then
-					VersionValue.Text = string.format("%s (%s)", tostring(verNum), tostring(uploadHash))
-				else
-					VersionValue.Text = tostring(verNum)
+			if ok and type(resp) == "table" and type(resp.Body) == "string" then
+				local decOk, data = pcall(function()
+					return HttpService:JSONDecode(resp.Body)
+				end)
+				if decOk and type(data) == "table" and type(data.WindowsResponse) == "table" then
+					local verStr = tostring(data.WindowsResponse.version or localClientVersion)
+					local ts = tonumber(data.WindowsResponse.timestamp)
+					if ts and ts > 0 then
+						VersionValue.Text = string.format("%s • %s", verStr, formatRelativeTime(ts))
+						fetchedWithDate = true
+					elseif data.WindowsDate then
+						VersionValue.Text = string.format("%s • seit %s", verStr, tostring(data.WindowsDate))
+						fetchedWithDate = true
+					end
 				end
 			end
 		end
+
+		if fetchedWithDate then
+			return
+		end
+
+		-- 2. Fallback: Roblox ClientSettings CDN + Official DeployHistory.txt
+		local latestVer = localClientVersion
+		pcall(function()
+			local rawJson = (game :: any):HttpGet("https://clientsettingscdn.roblox.com/v2/client-version/WindowsPlayer")
+			local data = HttpService:JSONDecode(rawJson)
+			if type(data) == "table" and data.version then
+				latestVer = tostring(data.version)
+			end
+		end)
+
+		local dateSuffix = ""
+		pcall(function()
+			local historyTxt = (game :: any):HttpGet("https://setup.rbxcdn.com/DeployHistory.txt")
+			if type(historyTxt) == "string" and #historyTxt > 0 then
+				local tail = string.sub(historyTxt, math.max(1, #historyTxt - 4000))
+				local lastMonth, lastDay, lastYear, lastTime = nil, nil, nil, nil
+				for m, d, y, t in string.gmatch(tail, "New WindowsPlayer [^\r\n]- at (%d+)/(%d+)/(%d+) ([%d:]+ [AP]M)") do
+					lastMonth, lastDay, lastYear, lastTime = m, d, y, t
+				end
+				if lastMonth and lastDay and lastYear then
+					dateSuffix = string.format(" • seit %02d.%02d.%s (%s)", tonumber(lastDay) or 1, tonumber(lastMonth) or 1, lastYear, tostring(lastTime or ""))
+				end
+			end
+		end)
+
+		VersionValue.Text = latestVer .. dateSuffix
 	end)
 
 	local Divider4 = Instance.new("Frame")
