@@ -3,19 +3,20 @@
 	================================================================================
 	NIGHT SYSTEM (NightUI) - Standalone Roblox Luau UI Library
 	Design: 1:1 Night System Dark Matte (#121212 / #16181A / #FFFFFF Accent)
-	Includes:
-	  - Original 1:1 "Home" Tab (88x88 Profile, Welcome Header, Info Text, Place ID & Team Stats)
-	  - Left Sidebar (Discord Brand Card, Home Tab, Automatic Main/Script Tab, Settings Tab, User Footer)
-	  - Automatic Element Sorting Engine (Sections, Toggles, Sliders, Dropdowns, ColorPickers, Inputs, Keybinds, Buttons)
+	Features:
+	  - Standardmäßig integrierter 1:1 "Home"-Tab (immer in der UI enthalten & beim Start aktiv)
+	  - Öffnet sich sofort beim Ausführen des Loadstrings (auch ohne extra CreateWindow-Aufruf)
+	  - Automatisches Sortier-System (AutoSort) für alle hinzugefügten Script-Elemente
 	Compatibility: CoreGui / gethui() / PlayerGui (Studio & Executors)
 	================================================================================
 ]]
 
 local NightSystem = {}
 NightSystem.__index = NightSystem
-NightSystem.Version = "2.1.0"
+NightSystem.Version = "2.2.0"
 NightSystem.Flags = {}
 NightSystem._Connections = {}
+NightSystem._ActiveWindow = nil
 
 -- // Services
 local Players = game:GetService("Players")
@@ -372,6 +373,14 @@ function NightSystem:CreateWindow(config: {
 	ToggleKey: Enum.KeyCode?,
 }?)
 	local cfg = config or {}
+
+	-- If the default window was already auto-created on loadstring load, just update its settings and return it
+	if NightSystem._ActiveWindow and NightSystem._ActiveWindow._ScreenGui and NightSystem._ActiveWindow._ScreenGui.Parent then
+		local existingWin = NightSystem._ActiveWindow
+		existingWin:_ApplyConfig(cfg)
+		return existingWin
+	end
+
 	local windowTitle = tostring(cfg.Title or "Night System")
 	local windowSubtitle = tostring(cfg.Subtitle or "discord.gg/4cZBCyDFmX")
 	local logoId = tostring(cfg.LogoId or ASSETS.DefaultLogo)
@@ -643,6 +652,7 @@ function NightSystem:CreateWindow(config: {
 
 	CloseBtn.MouseButton1Click:Connect(function()
 		disconnectAll()
+		NightSystem._ActiveWindow = nil
 		local fadeOut = tween(MainFrame, TWEEN_MEDIUM, {
 			Size = UDim2.new(0, 680, 0, 0),
 			BackgroundTransparency = 1,
@@ -676,7 +686,7 @@ function NightSystem:CreateWindow(config: {
 	end))
 
 	-- ========================================================================
-	-- LEFT SIDEBAR (Width: 210px - Discord Box, Navigation with Home Tab, User Footer)
+	-- LEFT SIDEBAR (Width: 210px - Discord Box, Default Home Tab, User Footer)
 	-- ========================================================================
 	local Sidebar = Instance.new("Frame")
 	Sidebar.Name = "Sidebar"
@@ -894,7 +904,7 @@ function NightSystem:CreateWindow(config: {
 	ContentGradient.Parent = ContentFrame
 
 	-- ========================================================================
-	-- SIDEBAR TAB ENGINE (Home Tab + Auto-Created Main Script Tab)
+	-- SIDEBAR TAB ENGINE (Default Built-in Home Tab + Dynamic Script Tab)
 	-- ========================================================================
 	type SidebarTab = {
 		Button: TextButton,
@@ -913,7 +923,7 @@ function NightSystem:CreateWindow(config: {
 		return navOrder
 	end
 
-	local function createSidebarCategory(catTitle: string): Frame
+	local function createSidebarCategory(catTitle: string): (Frame, TextLabel)
 		local wrapper = Instance.new("Frame")
 		wrapper.Name = "Category_" .. catTitle
 		wrapper.Size = UDim2.new(0, 190, 0, 22)
@@ -932,7 +942,7 @@ function NightSystem:CreateWindow(config: {
 		lbl.TextXAlignment = Enum.TextXAlignment.Left
 		lbl.Parent = wrapper
 
-		return wrapper
+		return wrapper, lbl
 	end
 
 	local function switchSidebarTab(tabName: string, instant: boolean?)
@@ -992,7 +1002,7 @@ function NightSystem:CreateWindow(config: {
 		end
 	end
 
-	local function registerSidebarTab(tabName: string, iconAsset: string): Frame
+	local function registerSidebarTab(tabName: string, iconAsset: string): (Frame, TextButton, TextLabel)
 		local btn = Instance.new("TextButton")
 		btn.Name = "Tab_" .. tabName
 		btn.Size = UDim2.new(0, 190, 0, 36)
@@ -1065,11 +1075,11 @@ function NightSystem:CreateWindow(config: {
 			switchSidebarTab(tabName, false)
 		end)
 
-		return page
+		return page, btn, lbl
 	end
 
 	-- ========================================================================
-	-- 1. ORIGINAL 1:1 "HOME" TAB (Preserved Exactly as Specified!)
+	-- 1. BUILT-IN DEFAULT "HOME" TAB (Always present in the UI by default!)
 	-- ========================================================================
 	local HomePage = registerSidebarTab("Home", ASSETS.Home)
 	createPadding(HomePage, 24, 24, 24, 24)
@@ -1276,12 +1286,14 @@ function NightSystem:CreateWindow(config: {
 	trackConnection(LocalPlayer:GetPropertyChangedSignal("Team"):Connect(refreshTeam))
 
 	-- ========================================================================
-	-- 2. AUTOMATIC "MAIN" SCRIPT CONTAINER (Below "Home" in Sidebar)
+	-- 2. SCRIPT ELEMENTS CONTAINER (Appears under Home when elements are added)
 	-- ========================================================================
-	createSidebarCategory("MAIN")
-	local MainScriptPage = registerSidebarTab(mainTabName, ASSETS.Main)
+	local MainCategoryFrame = createSidebarCategory("MAIN")
+	local MainScriptPage, MainTabBtn, MainTabLabel = registerSidebarTab(mainTabName, ASSETS.Main)
+	-- Hidden until the user's script actually adds at least 1 element (so standalone UI shows pure Home tab!)
+	MainCategoryFrame.Visible = false
+	MainTabBtn.Visible = false
 
-	-- Header inside MainScriptPage
 	local ContentHeader = Instance.new("Frame")
 	ContentHeader.Name = "ContentHeader"
 	ContentHeader.Size = UDim2.new(1, -48, 0, 42)
@@ -1311,7 +1323,6 @@ function NightSystem:CreateWindow(config: {
 	MainPageHeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 	MainPageHeaderSub.Parent = ContentHeader
 
-	-- Search Filter Box in Top-Right of MainScriptPage
 	local FilterBoxHolder = Instance.new("Frame")
 	FilterBoxHolder.Size = UDim2.new(0, 165, 0, 28)
 	FilterBoxHolder.Position = UDim2.new(1, 0, 0.5, 0)
@@ -1352,7 +1363,6 @@ function NightSystem:CreateWindow(config: {
 		tween(FilterStroke, TWEEN_FAST, { Color = THEME.Stroke, Transparency = 0.2 })
 	end)
 
-	-- Butter-smooth ScrollingFrame for all created script elements
 	local ScrollContainer = Instance.new("ScrollingFrame")
 	ScrollContainer.Name = "ElementScroll"
 	ScrollContainer.Size = UDim2.new(1, -32, 1, -78)
@@ -1387,7 +1397,7 @@ function NightSystem:CreateWindow(config: {
 		end
 	end)
 
-	-- Start on the "Home" Tab by default (just like the original Night System UI!)
+	-- Always select "Home" Tab by default!
 	switchSidebarTab("Home", true)
 
 	-- ========================================================================
@@ -1395,12 +1405,54 @@ function NightSystem:CreateWindow(config: {
 	-- ========================================================================
 	local Window = {}
 	Window.__index = Window
+	Window._ScreenGui = ScreenGui
 	Window._CreationCount = 0
 	Window._SectionBlock = 0
 	Window._AutoSort = autoSort
 	Window.Flags = NightSystem.Flags
 
+	function Window:_ApplyConfig(newCfg: { [string]: any })
+		if newCfg.Title then
+			windowTitle = tostring(newCfg.Title)
+			BrandTitle.Text = windowTitle
+			BadgeLabel.Text = windowTitle
+		end
+		if newCfg.Subtitle then
+			windowSubtitle = tostring(newCfg.Subtitle)
+			BrandSub.Text = windowSubtitle
+		end
+		if newCfg.IntroText then
+			introText = tostring(newCfg.IntroText)
+			InfoTextLabel.Text = introText
+		end
+		if newCfg.LogoId then
+			logoId = tostring(newCfg.LogoId)
+			LogoIcon.Image = logoId
+			LogoIcon.ImageTransparency = 0
+			LogoLetter.Text = ""
+		end
+		if newCfg.MainTabName then
+			mainTabName = tostring(newCfg.MainTabName)
+			MainTabLabel.Text = mainTabName
+			MainPageHeaderTitle.Text = mainTabName
+		end
+		if newCfg.AutoSort ~= nil then
+			Window._AutoSort = newCfg.AutoSort
+		end
+		if newCfg.ToggleKey then
+			toggleKey = newCfg.ToggleKey
+		end
+	end
+
+	local function revealMainScriptTab()
+		if not MainTabBtn.Visible then
+			MainCategoryFrame.Visible = true
+			MainTabBtn.Visible = true
+		end
+	end
+
 	local function computeLayoutOrder(elementType: string, manualOrder: number?): number
+		revealMainScriptTab()
 		if type(manualOrder) == "number" then
 			return manualOrder
 		end
@@ -1488,9 +1540,9 @@ function NightSystem:CreateWindow(config: {
 			else tostring(sectionConfig or "Section")
 		local manualOrder = if type(sectionConfig) == "table" then sectionConfig.LayoutOrder else nil
 
-		-- If this is the very first section created and MainTabName was left default, update header title nicely
 		if Window._SectionBlock == 0 and cfg.MainTabName == nil then
 			MainPageHeaderTitle.Text = title
+			MainTabLabel.Text = title
 		end
 
 		local secFrame = Instance.new("Frame")
@@ -2842,12 +2894,53 @@ function NightSystem:CreateWindow(config: {
 
 	function Window:Destroy()
 		disconnectAll()
+		NightSystem._ActiveWindow = nil
 		if ScreenGui and ScreenGui.Parent then
 			ScreenGui:Destroy()
 		end
 	end
 
-	return setmetatable(Window, Window)
+	local winInstance = setmetatable(Window, Window)
+	NightSystem._ActiveWindow = winInstance
+	return winInstance
 end
+
+-- Direct shorthand methods on NightSystem so users can also call NightSystem:CreateToggle(...) directly
+function NightSystem:CreateSection(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateSection(...)
+end
+function NightSystem:CreateToggle(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateToggle(...)
+end
+function NightSystem:CreateButton(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateButton(...)
+end
+function NightSystem:CreateSlider(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateSlider(...)
+end
+function NightSystem:CreateDropdown(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateDropdown(...)
+end
+function NightSystem:CreateInput(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateInput(...)
+end
+function NightSystem:CreateKeybind(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateKeybind(...)
+end
+function NightSystem:CreateColorPicker(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateColorPicker(...)
+end
+function NightSystem:CreateLabel(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateLabel(...)
+end
+function NightSystem:CreateParagraph(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateParagraph(...)
+end
+function NightSystem:CreateDivider(...)
+	return (NightSystem._ActiveWindow or NightSystem:CreateWindow()):CreateDivider(...)
+end
+
+-- Auto-initialize the default Window with the built-in "Home" Tab immediately when the loadstring runs!
+NightSystem:CreateWindow()
 
 return NightSystem
